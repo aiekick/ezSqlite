@@ -75,3 +75,6 @@ if(NOT WIN32)
 	set(GLAD_LIBRARIES ${GLAD_LIBRARIES} dl)
 endif()
 
+if (MSVC)
+	set_property(TARGET glad PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
