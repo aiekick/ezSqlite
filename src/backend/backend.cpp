@@ -71,6 +71,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 static void glfw_error_callback(int error, const char* description) {
+    const std::string desc{description};
+    if (desc.find("Failed to convert clipboard to string") != std::string::npos) {
+        return;
+    }
     LogVarError("glfw error %i : %s", error, description);
 }
 
