@@ -1,7 +1,7 @@
 ﻿/*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -19,12 +19,12 @@
 
 #include "Backend.h"
 #include <ezlibs/ezOS.hpp>
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#ifdef WINDOWS_OS
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+#ifndef __EMSCRIPTEN__
+    #include <GLFW/glfw3.h>
+    #ifdef WINDOWS_OS
+        #define GLFW_EXPOSE_NATIVE_WIN32
+        #include <GLFW/glfw3native.h>
+    #endif
 #endif
 
 #include <Headers/ezSqliteBuild.h>
@@ -43,8 +43,11 @@
 
 #include <LayoutManager.h>
 
-#include <backend/helpers/dbHelper.h>
-#include <backend/controller/controller.h>
+// singletons
+#include <backend/helpers/databaseHelper.h>
+#include <backend/managers/databaseManager.h>
+
+#include <frontend/components/schema/databaseSchemaComp.h>
 
 #include <imguipack.h>
 
@@ -54,9 +57,8 @@
 #include <ezlibs/ezEmbed.hpp>
 #include <frontend/frontend.h>
 
-#include <frontend/panes/MessagePane.h>
+#include <frontend/panes/misc/messagePane.h>
 
-#include <backend/managers/dbManager.h>
 
 // we include the cpp just for embedded fonts
 #include <resources/fontIcons.cpp>
@@ -71,6 +73,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 static void glfw_error_callback(int error, const char* description) {
+    const std::string desc{description};
+    if (desc.find("Failed to convert clipboard to string") != std::string::npos) {
+        return;
+    }
     LogVarError("glfw error %i : %s", error, description);
 }
 
@@ -100,64 +106,73 @@ bool Backend::init(const ez::App& vApp) {
     return false;
 }
 
-void Backend::run() {
-    int display_w, display_h;
-    ImRect viewRect;
-    while (!glfwWindowShouldClose(m_MainWindowPtr)) {
-        DBManager::ref().newFrame();
+void Backend::update() {
+    DatabaseManager::ref().newFrame();
 
-        // maintain active, prevent user change via imgui dialog
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Disable Viewport
+    // maintain active, prevent user change via imgui dialog
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Disable Viewport
 
-        glfwPollEvents();
+    glfwGetFramebufferSize(m_MainWindowPtr, &m_display_w, &m_display_h);
 
-        glfwGetFramebufferSize(m_MainWindowPtr, &display_w, &display_h);
+    m_update();  // to do absolutly before imgui rendering
 
-        m_update();  // to do absolutly before imgui rendering
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
-        if (viewport) {
-            viewRect.Min = viewport->WorkPos;
-            viewRect.Max = viewRect.Min + viewport->WorkSize;
-        } else {
-            viewRect.Max = ImVec2((float)display_w, (float)display_h);
-        }
-
-        Frontend::ref().Display(m_CurrentFrame, viewRect);
-
-        ImGui::Render();
-
-        glViewport(0, 0, display_w, display_h);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        auto* backup_current_context = glfwGetCurrentContext();
-
-        // Update and Render additional Platform Windows
-        // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste
-        // this code elsewhere.
-        //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
-        glfwMakeContextCurrent(backup_current_context);
-
-        glfwSwapBuffers(m_MainWindowPtr);
-
-        // mainframe post actions
-        PostRenderingActions();
-
-        ++m_CurrentFrame;
-
-        // will pause the view until we move the mouse or press keys
-        // glfwWaitEvents();
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (viewport) {
+        m_viewRect.Min = viewport->WorkPos;
+        m_viewRect.Max = m_viewRect.Min + viewport->WorkSize;
+    } else {
+        m_viewRect.Max = ImVec2((float)m_display_w, (float)m_display_h);
     }
+
+    Frontend::ref().Display(m_CurrentFrame, m_viewRect);
+
+    ImGui::Render();
+
+    glViewport(0, 0, m_display_w, m_display_h);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    auto* backup_current_context = glfwGetCurrentContext();
+
+    // Update and Render additional Platform Windows
+    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste
+    // this code elsewhere.
+    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+    glfwMakeContextCurrent(backup_current_context);
+
+    glfwSwapBuffers(m_MainWindowPtr);
+
+    // mainframe post actions
+    PostRenderingActions();
+
+    ++m_CurrentFrame;
+
+    // will pause the view until we move the mouse or press keys
+    glfwWaitEventsTimeout(0.5);
+}
+
+static void sUpdate(void* vBackend) {
+    auto* backend = static_cast<Backend*>(vBackend);
+    backend->update();
+}
+
+void Backend::run() {
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop_arg(Backend::sUpdate, this, 0, true);
+#else
+    while (!glfwWindowShouldClose(m_MainWindowPtr)) {
+        update();
+    }
+#endif
 }
 
 // todo : to refactor ! i dont like that
@@ -191,17 +206,17 @@ void Backend::NeedToCloseDatabase() {
 void Backend::PostRenderingActions() {
     if (m_NeedToLoadDatabase) {
         m_NeedToLoadDatabase = false;
-        if (DBManager::ref().loadDatabaseFromFile(m_DatabaseFileToLoad)) {
+        if (DatabaseManager::ref().loadDatabaseFromFile(m_DatabaseFileToLoad)) {
             setAppTitle(m_DatabaseFileToLoad);
         }
     }
     if (m_NeedToNewDatabase) {
         m_NeedToNewDatabase = false;
-        if (DBManager::ref().newDatabaseFromFile(m_DatabaseFileToLoad)) {
+        if (DatabaseManager::ref().newDatabaseFromFile(m_DatabaseFileToLoad)) {
             setAppTitle(m_DatabaseFileToLoad);
         }
     }
-    Controller::ref().doActions();
+    DatabaseSchemaComp::ref().doActions();
 }
 
 bool Backend::IsNeedToCloseApp() {
@@ -222,7 +237,7 @@ void Backend::setAppTitle(const std::string& vFilePathName) {
     if (ps.isOk) {
         glfwSetWindowTitle(  //
             m_MainWindowPtr,
-            ez::str::toStr("ezSqlite Beta %s - Database : %s", ezSqlite_BuildId, vFilePathName.c_str()).c_str());
+            ez::str::toStr("ezSqlite Beta %s - DatabaseDesc : %s", ezSqlite_BuildId, vFilePathName.c_str()).c_str());
     } else {
         glfwSetWindowTitle(  //
             m_MainWindowPtr,
@@ -273,8 +288,8 @@ bool Backend::GetConsoleVisibility() {
 
 ez::xml::Nodes Backend::getXmlNodes(const std::string& vUserDatas) {
     ez::xml::Node node;
-    node.addChild("database").setContent(DBManager::ref().getDatabaseFilepathName());
-    node.addChilds(Controller::ref().getXmlNodes(vUserDatas));
+    node.addChild("database").setContent(DatabaseManager::ref().getDatabaseFilepathName());
+    node.addChilds(DatabaseManager::ref().getXmlNodes(vUserDatas));
     node.addChilds(Frontend::ref().getXmlNodes(vUserDatas));
     return node.getChildren();
 }
@@ -286,7 +301,7 @@ bool Backend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& v
     if (strName == "database") {
         NeedToLoadDatabase(strValue);
     }
-    Controller::ref().setFromXmlNodes(vNode, vParent, vUserDatas);
+    DatabaseManager::ref().setFromXmlNodes(vNode, vParent, vUserDatas);
     Frontend::ref().setFromXmlNodes(vNode, vParent, vUserDatas);
     return true;
 }
@@ -309,14 +324,20 @@ void Backend::m_IncFrame() {
 
 bool Backend::m_InitWindow() {
     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
+    if (!glfwInit()) {
         return false;
+    }
 
+#ifdef __EMSCRIPTEN__
+    // GL 3.0 + GLSL 130
+    m_GlslVersion = "#version 300 es";
+#else
     // GL 3.0 + GLSL 130
     m_GlslVersion = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_SAMPLES, 4);
+#endif
 
     // Create window with graphics context
     m_MainWindowPtr = glfwCreateWindow(1280, 720, "ezSqlite", nullptr, nullptr);
@@ -405,11 +426,11 @@ bool Backend::m_InitImGui() {
 }
 
 void Backend::m_InitModels() {
-    DBHelper::initSingleton();
+    DatabaseHelper::initSingleton();
 }
 
 void Backend::m_UnitModels() {
-    DBHelper::unitSingleton();
+    DatabaseHelper::unitSingleton();
 }
 
 void Backend::m_InitSystems() {}

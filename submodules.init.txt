@@ -3,3 +3,4 @@ git submodule add --force -b "master" https://github.com/aiekick/ImGuiPack.git 3
 git submodule add --force -b "master" https://github.com/aiekick/BuildInc.git 3rdparty/BuildInc
 git submodule add --force -b "c" https://github.com/Dav1dde/glad.git 3rdparty/glad
 git submodule add --force -b "master" https://github.com/glfw/glfw.git 3rdparty/glfw
+git submodule add --force -b "master" https://github.com/aiekick/Grapher.git 3rdparty/grapher

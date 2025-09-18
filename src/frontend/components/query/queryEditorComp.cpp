@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -17,9 +17,11 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "CodeEditor.h"
+#include "queryEditorComp.h"
 
 #include <ezlibs/ezTools.hpp>
+
+#include <frontend/panes/query/queryEditorPane.h>
 
 #include <filesystem>
 #include <fstream>
@@ -34,17 +36,17 @@
 #define SHORTCUT "Ctrl-"
 #endif
 
-void CodeEditor::setLanguage(const TextEditor::Language* vLanguage) {
+void QueryEditorComp::setLanguage(const TextEditor::Language* vLanguage) {
     if (vLanguage != nullptr) {
         m_editor.SetLanguage(vLanguage);
     }
 }
 
-void CodeEditor::setFont(ImFont* vpFont) {
+void QueryEditorComp::setFont(ImFont* vpFont) {
     m_fontParams.pFont = vpFont;
 }
 
-void CodeEditor::newFile() {
+void QueryEditorComp::newFile() {
     if (isDirty()) {
         showConfirmClose([this]() {
             m_originalText.clear();
@@ -61,7 +63,7 @@ void CodeEditor::newFile() {
     }
 }
 
-void CodeEditor::openFile(const std::string& path) {
+void QueryEditorComp::openFile(const std::string& path) {
     try {
         std::ifstream stream(path.c_str());
         std::string text;
@@ -83,7 +85,7 @@ void CodeEditor::openFile(const std::string& path) {
     }
 }
 
-void CodeEditor::saveFile() {
+void QueryEditorComp::saveFile() {
     try {
         m_editor.StripTrailingWhitespaces();
         std::ofstream stream(m_filename.c_str());
@@ -96,7 +98,7 @@ void CodeEditor::saveFile() {
     }
 }
 
-void CodeEditor::render() {
+void QueryEditorComp::render() {
     // add a menubar
     renderMenuBar();
 
@@ -113,16 +115,16 @@ void CodeEditor::render() {
     }
 }
 
-std::string CodeEditor::getCode() const {
+std::string QueryEditorComp::getCode() const {
     return m_editor.GetText();
 }
 
-void CodeEditor::setCode(const std::string& vCode) {
+void QueryEditorComp::setCode(const std::string& vCode) {
     m_editor.SetText(vCode);
+    LayoutManager::ref().FocusSpecificPane(QueryEditorPane::ref()->GetFlag());
 }
 
-
-void CodeEditor::tryToQuit() {
+void QueryEditorComp::tryToQuit() {
     if (isDirty()) {
         showConfirmQuit();
     } else {
@@ -130,7 +132,7 @@ void CodeEditor::tryToQuit() {
     }
 }
 
-void CodeEditor::renderMenuBar() {
+void QueryEditorComp::renderMenuBar() {
     // create menubar
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Edit")) {
@@ -301,7 +303,7 @@ void CodeEditor::renderMenuBar() {
     }
 }
 
-void CodeEditor::renderStatusBar() {
+void QueryEditorComp::renderStatusBar() {
     // language support
     static const char* languages[] = {"C", "C++", "Cs", "AngelScript", "Lua", "Python", "GLSL", "HLSL", "JSON", "Markdown", "SQL"};
 
@@ -376,27 +378,27 @@ void CodeEditor::renderStatusBar() {
     ImGui::PopStyleColor();
 }
 
-void CodeEditor::showDiff() {
+void QueryEditorComp::showDiff() {
     m_diff.SetLanguage(m_editor.GetLanguage());
     m_diff.SetText(m_originalText, m_editor.GetText());
     m_state = State::diff;
 }
 
-void CodeEditor::showConfirmClose(std::function<void()> callback) {
+void QueryEditorComp::showConfirmClose(std::function<void()> callback) {
     m_onConfirmClose = callback;
     m_state = State::confirmClose;
 }
 
-void CodeEditor::showConfirmQuit() {
+void QueryEditorComp::showConfirmQuit() {
     m_state = State::confirmQuit;
 }
 
-void CodeEditor::showError(const std::string& message) {
+void QueryEditorComp::showError(const std::string& message) {
     m_errorMessage = message;
     m_state = State::confirmError;
 }
 
-void CodeEditor::renderDiff() {
+void QueryEditorComp::renderDiff() {
     ImGui::OpenPopup("Changes since Opening File##m_diff");
     auto viewport = ImGui::GetMainViewport();
     ImVec2 center = viewport->GetCenter();
@@ -426,7 +428,7 @@ void CodeEditor::renderDiff() {
     }
 }
 
-void CodeEditor::renderConfirmClose() {
+void QueryEditorComp::renderConfirmClose() {
     ImGui::OpenPopup("Confirm Close");
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -455,12 +457,12 @@ void CodeEditor::renderConfirmClose() {
     }
 }
 
-void CodeEditor::renderConfirmQuit() {
-    ImGui::OpenPopup("Quit CodeEditor?");
+void QueryEditorComp::renderConfirmQuit() {
+    ImGui::OpenPopup("Quit QueryEditorComp?");
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    if (ImGui::BeginPopupModal("Quit CodeEditor?", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal("Quit QueryEditorComp?", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Your text has changed and is not saved!\nDo you really want to quit?\n\n");
         ImGui::Separator();
 
@@ -484,7 +486,7 @@ void CodeEditor::renderConfirmQuit() {
     }
 }
 
-void CodeEditor::renderConfirmError() {
+void QueryEditorComp::renderConfirmError() {
     ImGui::OpenPopup("Error");
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -506,30 +508,42 @@ void CodeEditor::renderConfirmError() {
     }
 }
 
-bool CodeEditor::isDirty() const {
+bool QueryEditorComp::isDirty() const {
     return m_editor.GetUndoIndex() != m_version;
 }
 
-bool CodeEditor::isSavable() const {
+bool QueryEditorComp::isSavable() const {
     return isDirty() && m_filename != "untitled";
 }
 
-void CodeEditor::increaseFontSIze() {
+void QueryEditorComp::increaseFontSIze() {
     m_fontParams.fontSize = std::clamp(m_fontParams.fontSize + 1.0f, 8.0f, 100.0f);
 }
 
-void CodeEditor::decreaseFontSIze() {
+void QueryEditorComp::decreaseFontSIze() {
     m_fontParams.fontSize = std::clamp(m_fontParams.fontSize - 1.0f, 8.0f, 100.0f);
 }
 
-void CodeEditor::resetFontSIze() {
+void QueryEditorComp::resetFontSIze() {
     m_fontParams.fontSize = m_FontParamsDefault.fontSize;
 }
 
-void CodeEditor::clearErrorMarkers() {
+void QueryEditorComp::clearErrorMarkers() {
     m_editor.ClearMarkers();
 }
 
-void CodeEditor::addErrorMarker(const ErrorMarker& vErrorMsg) {
+void QueryEditorComp::addErrorMarker(const ErrorMarker& vErrorMsg) {
     m_editor.AddMarker(vErrorMsg.line, vErrorMsg.lineNumberColor, vErrorMsg.textColor, vErrorMsg.lineNumberTooltip, vErrorMsg.textTooltip);
+}
+
+ez::xml::Nodes QueryEditorComp::getXmlNodes(const std::string& vUserDatas) {
+    ez::xml::Node node;
+    return node.getChildren();
+}
+
+bool QueryEditorComp::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
+    //const auto& strName = vNode.getName();
+    //const auto& strValue = vNode.getContent();
+    //const auto& strParentName = vParent.getName();
+    return false;  // stop here
 }

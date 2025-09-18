@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -28,11 +28,11 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 
-class DBManager;
-class MessagePane : public AbstractPane {
-    IMPLEMENT_SHARED_SINGLETON(MessagePane)
-    DISABLE_CONSTRUCTORS(MessagePane)
-    DISABLE_DESTRUCTORS(MessagePane)
+class DatabaseManager;
+class QueryEditorPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(QueryEditorPane)
+    DISABLE_CONSTRUCTORS(QueryEditorPane)
+    DISABLE_DESTRUCTORS(QueryEditorPane)
 public:
     bool Init() override;
     void Unit() override;
@@ -40,4 +40,5 @@ public:
     bool DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
+
 };

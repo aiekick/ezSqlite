@@ -106,7 +106,7 @@ void LocationHelper::m_defineLanguageEN() {
     LocationHelper::layout_menu_name = " Layouts";
     LocationHelper::layout_menu_help = "Default Layout";
 
-    LocationHelper::mainframe_menubar_project = "Database";
+    LocationHelper::mainframe_menubar_project = "DatabaseDesc";
     LocationHelper::mainframe_menubar_project_open = " Open";
     LocationHelper::mainframe_menubar_project_reload = " Reload";
     LocationHelper::mainframe_menubar_project_close = " Close";
@@ -117,7 +117,7 @@ void LocationHelper::m_defineLanguageFR() {
     LocationHelper::layout_menu_name = " Dispositions";
     LocationHelper::layout_menu_help = "Disposition par defaut";
 
-    LocationHelper::mainframe_menubar_project = "Database";
+    LocationHelper::mainframe_menubar_project = "DatabaseDesc";
     LocationHelper::mainframe_menubar_project_open = " Ouvrir";
     LocationHelper::mainframe_menubar_project_reload = " Recharger";
     LocationHelper::mainframe_menubar_project_close = " Fermer";

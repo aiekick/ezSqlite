@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -28,11 +28,11 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 
-class DBManager;
-class DBStructurePane : public AbstractPane {
-    IMPLEMENT_SHARED_SINGLETON(DBStructurePane)
-    DISABLE_CONSTRUCTORS(DBStructurePane)
-    DISABLE_DESTRUCTORS(DBStructurePane)
+class DatabaseManager;
+class DatabaseInfosPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(DatabaseInfosPane)
+    DISABLE_CONSTRUCTORS(DatabaseInfosPane)
+    DISABLE_DESTRUCTORS(DatabaseInfosPane)
 public:
     bool Init() override;
     void Unit() override;

@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -17,57 +17,56 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <frontend/panes/codeEditorPane.h>
-#include <backend/managers/dbManager.h>
-#include <frontend/components/codeEditor.h>
+#include <frontend/panes/schema/schemaPane.h>
+#include <backend/managers/databaseManager.h>
+#include <frontend/components/schema/databaseSchemaComp.h>
 
-bool CodeEditorPane::Init() {
-    if (ImGui::GetIO().Fonts->Fonts.size() > 1U) {
-        CodeEditor::ref().setFont(ImGui::GetIO().Fonts->Fonts[1]);
-    }
-    CodeEditor::ref().setLanguage(TextEditor::Language::Sql());
+bool DatabaseInfosPane::Init() {
     return true;
 }
 
-void CodeEditorPane::Unit() {
+void DatabaseInfosPane::Unit() {
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-bool CodeEditorPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool DatabaseInfosPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
-        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
+        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;  //| ImGuiWindowFlags_MenuBar;
         if (ImGui::Begin(GetName().c_str(), vOpened, flags)) {
 #ifdef USE_DECORATIONS_FOR_RESIZE_CHILD_WINDOWS
             auto win = ImGui::GetCurrentWindowRead();
             if (win->Viewport->Idx != 0)
                 flags |= ImGuiWindowFlags_NoResize;  // | ImGuiWindowFlags_NoTitleBar;
             else
-                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
+                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;  //| ImGuiWindowFlags_MenuBar;
 #endif
-            CodeEditor::ref().render();
+
+            if (DatabaseManager::ref().isDatabaseLoaded()) {
+                DatabaseSchemaComp::ref().drawSchema();
+            }
         }
+
         ImGui::End();
     }
     return change;
 }
 
-bool CodeEditorPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool DatabaseInfosPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
 
-bool CodeEditorPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool DatabaseInfosPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);    
     return false;
 }
 
-bool CodeEditorPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool DatabaseInfosPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

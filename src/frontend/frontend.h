@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -77,7 +77,6 @@ private:  // actions
     void m_actionCancel();
     bool m_displayNewDatabaseDialog();
     bool m_displayOpenDatabaseDialog();
-    bool m_build();
     bool m_build_themes();
     void m_drawMainMenuBar();
     void m_drawMainStatusBar();

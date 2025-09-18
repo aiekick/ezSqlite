@@ -2,8 +2,20 @@ cmake_minimum_required(VERSION 3.20)
 
 set(PROJECT ezSqlite)
 
-enable_language(C CXX)
 project(${PROJECT} CXX)
+enable_language(C CXX)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(BUILD_WEBASSEMBLY TRUE)
+else()
+    set(BUILD_WEBASSEMBLY FALSE)
+endif()
+
+if (BUILD_WEBASSEMBLY)
+    message(STATUS "Building WebAssembly version with Emscripten")
+else()
+    message(STATUS "Building native version")
+endif()
 
 option(USE_BUILDING_OF_TESTS "Enable the build of tests" OFF)
 
@@ -53,12 +65,12 @@ if(NOT CMAKE_RELWITHDEBINFO_POSTFIX)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zo")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zo /std=c++17")
     add_definitions(-D_USE_MATH_DEFINES)
     add_definitions(-DMSVC)
 	add_definitions(-DNOMINMAX)
 else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wunused-parameter -Wno-unknown-pragmas")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17 -Wextra -Wpedantic -Wunused-parameter -Wno-unknown-pragmas")
 endif ()
 
 if(WIN32)
@@ -76,14 +88,22 @@ add_definitions(-DCUSTOM_IMWIDGETS_CONFIG="${CMAKE_SOURCE_DIR}/src/headers/custo
 add_definitions(-DCUSTOM_IMGUIFILEDIALOG_CONFIG="${CMAKE_SOURCE_DIR}/src/headers/customImGuiFileDialogConfig.h")
 add_definitions(-DCUSTOM_THEME_HELPER_CONFIG_HEADER="${CMAKE_SOURCE_DIR}/src/headers/customImGuiThemeHelperConfigHeader.h")
 
+if (BUILD_WEBASSEMBLY)
+	add_definitions(-DEMSCRIPTEN)
+    add_definitions(-DIMGUI_IMPL_OPENGL_ES3)
+    remove_definitions(-DWIN32)
+    remove_definitions(-DMSVC)
+    remove_definitions(-D_CRT_SECURE_NO_WARNINGS)
+else()
+	add_definitions(${GLFW_DEFINITIONS})
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 include(cmake/3rdparty.cmake)
 
 ###########################################################
 ###########################################################
 ###########################################################
-
-add_definitions(${GLFW_DEFINITIONS})
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 # Plugin Apis for have it the visual studio tree of the App
 file(GLOB_RECURSE APIS_SOURCES ${CMAKE_SOURCE_DIR}/apis/*.*)
@@ -124,7 +144,16 @@ add_executable(${PROJECT}
 	${APP_ICON_RESOURCE_WINDOWS}
 )
 
-set_target_properties(${PROJECT} PROPERTIES OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}")
+if (BUILD_WEBASSEMBLY)
+    set_target_properties(${PROJECT} PROPERTIES
+        OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}"
+        SUFFIX ".html"
+    )
+else()
+	set_target_properties(${PROJECT} PROPERTIES 
+		OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}"
+	)
+endif()
 
 if (MSVC)
 	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -147,16 +176,25 @@ include_directories(
 	${GLAD_INCLUDE_DIR}
 )
 
-target_link_libraries(${PROJECT}
-	${IMGUIPACK_LIBRARIES}
-	${SQLITE3_LIBRARIES}
-	${OPENGL_LIBRARIES}
-	${GLFW_LIBRARIES}
-	${GLAD_LIBRARIES}
-)
-
-# define for let ezSqlite detect what is the config of a plugin 
-target_compile_definitions(${PROJECT} PRIVATE -DPLUGIN_RUNTIME_CONFIG=$<$<CONFIG:Debug>:"_Debug">$<$<CONFIG:Release>:"_Release">$<$<CONFIG:MinSizeRel>:"_MinSizeRel">$<$<CONFIG:RelWithDebInfo>:"_RelWithDebInfo">)
+if (BUILD_WEBASSEMBLY)
+    target_link_options(${PROJECT} PRIVATE
+        ${IMGUIPACK_LIBRARIES}
+        ${SQLITE3_LIBRARIES}
+        "-s USE_GLFW=3"
+        "-s USE_WEBGL2=1"
+        "-s FULL_ES3=1"
+        "-s ALLOW_MEMORY_GROWTH=1"
+        "-s INITIAL_MEMORY=128MB"
+    )
+else()
+    target_link_libraries(${PROJECT}
+        ${IMGUIPACK_LIBRARIES}
+        ${SQLITE3_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        ${GLFW_LIBRARIES}
+        ${GLAD_LIBRARIES}
+    )
+endif()
 
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
@@ -168,12 +206,13 @@ set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBI
 ########################################################
 
 ## only for Debug
-add_subdirectory(3rdparty/BuildInc)
-## set_target_properties(BuildInc PROPERTIES FOLDER Tools)
+if(NOT TARGET ezBuildInc)
+	add_subdirectory(3rdparty/ezLibs/Tests/ezBuildInc)
+endif()
 
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>)
+	COMMAND ezBuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h>)
 
 ########################################################
 ##### TESTS ############################################
@@ -192,7 +231,6 @@ endif()
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>" > ${CMAKE_BINARY_DIR}/current_build_type
-	DEPENDS ${PROJECT}
 )
 
 ### outside of the building we read the last file content
@@ -209,7 +247,7 @@ endif()
 ### VERSION #################################################
 #############################################################
 
-file(READ ${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h BuildIdFile)
+file(READ ${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h BuildIdFile)
 string(REGEX MATCH "#define ${PROJECT}_BuildNumber ([0-9]*)" _ ${BuildIdFile})
 set(BuildNumber ${CMAKE_MATCH_1})
 string(REGEX MATCH "#define ${PROJECT}_MinorNumber ([0-9]*)" _ ${BuildIdFile})
@@ -222,7 +260,6 @@ message(STATUS "${PROJECT} Version to install : ${${PROJECT}_Version}")
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}_v${MajorNumber}.${MinorNumber}.${BuildNumber}" > ${CMAKE_SOURCE_DIR}/VERSION
-	DEPENDS ${PROJECT}
 )
 
 #############################################################

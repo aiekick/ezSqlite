@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -19,7 +19,13 @@
 
 #pragma once
 
-#include <glad/glad.h>
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+    #include <GLES3/gl3.h>
+    #include <GLES3/gl3ext.h>
+#else
+    #include <glad/glad.h>
+#endif
 
 #include <imguipack.h>
 
@@ -71,6 +77,10 @@ private:
 
     GLuint m_embeddedAppIcon{};
 
+    int32_t m_display_w{};
+    int32_t m_display_h{};
+    ImRect m_viewRect;
+
 public:  // getters
     ImVec2 GetDisplayPos() { return ImVec2((float)m_DisplayPos.x, (float)m_DisplayPos.y); }
     ImVec2 GetDisplaySize() { return ImVec2((float)m_DisplaySize.x, (float)m_DisplaySize.y); }
@@ -79,6 +89,8 @@ public:
     bool init(const ez::App& vApp);
     void run();
     void unit();
+
+    void update();
 
     bool isThereAnError() const;
 

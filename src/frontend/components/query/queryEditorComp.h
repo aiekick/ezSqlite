@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -20,20 +20,20 @@
 #pragma once
 #include <imguipack.h>
 #include <3rdparty/imgui_imguicolortextedit/TextEditor.h>
-#include <3rdparty/imgui_imguicolortextedit/TextDiff.h>
 
 #include <algorithm>
 #include <functional>
 #include <string>
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
+#include <ezlibs/ezXmlConfig.hpp>
 
 #define FIND_POPUP_TEXT_FIELD_LENGTH 128
 
-class CodeEditor {
-    IMPLEMENT_SINGLETON(CodeEditor)
-    DISABLE_CONSTRUCTORS(CodeEditor)
-    DISABLE_DESTRUCTORS(CodeEditor)
+class QueryEditorComp : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(QueryEditorComp)
+    DISABLE_CONSTRUCTORS(QueryEditorComp)
+    DISABLE_DESTRUCTORS(QueryEditorComp)
 private:
 
     std::string m_originalText;
@@ -93,6 +93,9 @@ public:
 
     void clearErrorMarkers();
     void addErrorMarker(const ErrorMarker& vErrorMsg);
+
+    ez::xml::Nodes getXmlNodes(const std::string& vUserDatas = "") override;
+    bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
 private:
     // private functions

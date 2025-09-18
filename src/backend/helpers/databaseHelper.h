@@ -1,7 +1,7 @@
 /*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -19,41 +19,26 @@
 
 #pragma once
 
+#include <headers/defs.h>
+#include <ezlibs/ezClass.hpp>
+#include <ezlibs/ezSingleton.hpp>
+
 #include <variant>
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include <string>
-#include <ezlibs/ezClass.hpp>
-#include <ezlibs/ezSingleton.hpp>
 
 struct sqlite3;
-
-// Résultat générique de requête
-struct ColumnInfo {
-    std::string name;
-    std::string declType;  // Type déclaré dans la table (peut être vide)
-};
-
-struct Row {
-    std::vector<std::variant<int64_t, double, std::string, std::vector<uint8_t>, std::nullptr_t>> values;
-};
-
-struct QueryResult {
-    std::vector<ColumnInfo> columns;
-    std::vector<Row> rows;
-    bool isValid() const { return (!columns.empty()) && (!rows.empty()); }
-    void clear() { *this = QueryResult(); }
-};
 
 struct SqliteDbDeleter final {
     void operator()(sqlite3* vDb) const noexcept;
 };
 
-class DBHelper final {
-    IMPLEMENT_SINGLETON(DBHelper)
-    DISABLE_CONSTRUCTORS(DBHelper)
-    DISABLE_DESTRUCTORS(DBHelper)
+class DatabaseHelper final {
+    IMPLEMENT_SINGLETON(DatabaseHelper)
+    DISABLE_CONSTRUCTORS(DatabaseHelper)
+    DISABLE_DESTRUCTORS(DatabaseHelper)
 
 private:  // (static)
     static const int32_t m_maxInsertAttempts;
@@ -85,7 +70,7 @@ public:  // (methods)
     std::string getLastErrorMsg() const noexcept;
 
     // QUERY
-    QueryResult executeQuery(const std::string& vSql) noexcept;
+    datas::QueryResult executeQuery(const std::string& vSql) noexcept;
 
 protected:  // (methods)
 
