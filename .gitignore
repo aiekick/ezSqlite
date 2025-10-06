@@ -50,3 +50,5 @@
 /tools/imgui.ini
 /tools
 /res/appicon.aps
+/.cache
+/VERSION

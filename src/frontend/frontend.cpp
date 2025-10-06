@@ -1,7 +1,7 @@
 ﻿/*
  * This file is part of ezSqlite.
  *
- * Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)
+ * Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)
  *
  * ezSqlite is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -74,7 +74,7 @@ bool Frontend::init() {
     LayoutManager::ref().Init("Panes", "Default Layout");
 
     // Views
-    LayoutManager::ref().AddPane(QueryResultsTablePane::ref(), "Results", "", "CENTRAL", 0.0f, true, false);
+    LayoutManager::ref().AddPane(QueryResultsTablePane::ref(), "Results", "", "CENTRAL", 0.0f, true, true);
     LayoutManager::ref().AddPane(MessagePane::ref(), "Console", "", "BOTTOM", 0.25f, false, false);
     LayoutManager::ref().AddPane(CodeEditorPane::ref(), "Editor", "", "TOP", 0.25f, true, true);
     LayoutManager::ref().AddPane(DBStructurePane::ref(), "Structure", "", "LEFT", 0.25f, true, false);
@@ -135,6 +135,7 @@ void Frontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
         }
 
         if (LayoutManager::ref().DrawPanes(vCurrentFrame, context_ptr, {})) {
+
         }
 
         DrawDialogsAndPopups(vCurrentFrame, m_displayRect, context_ptr, {});
@@ -203,7 +204,7 @@ void Frontend::m_drawAboutDialog() {
         ImGui::Spring(0.0f);
         ImGui::TextColored(paragraphColor, "License : GNU Affero General Public License");
         ImGui::Spring(0.0f);
-        ImGui::Text("Copyright (C) 2025 Stephane Cuillerdier (Aka aiekick)");
+        ImGui::Text("Copyright (C) 2025 Stephane Cuillerdier (aka aiekick)");
         ImGui::Spring(0.0f);
         ImGui::Text("ezSqlite is free software: you can redistribute it and/or modify");
         ImGui::Spring(0.0f);

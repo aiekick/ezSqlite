@@ -3,7 +3,7 @@
 	url = https://github.com/aiekick/EzLibs.git
 	branch = master
 [submodule "3rdparty/ImGuiPack"]
-	path = 3rdparty/ImGuiPack
+	path = 3rdparty/imguipack
 	url = https://github.com/aiekick/ImGuiPack.git
 	branch = master
 [submodule "3rdparty/BuildInc"]

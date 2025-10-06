@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 set(PROJECT ezSqlite)
 
-enable_language(C CXX)
 project(${PROJECT} CXX)
+enable_language(C CXX)
 
 option(USE_BUILDING_OF_TESTS "Enable the build of tests" OFF)
 
@@ -155,9 +155,6 @@ target_link_libraries(${PROJECT}
 	${GLAD_LIBRARIES}
 )
 
-# define for let ezSqlite detect what is the config of a plugin 
-target_compile_definitions(${PROJECT} PRIVATE -DPLUGIN_RUNTIME_CONFIG=$<$<CONFIG:Debug>:"_Debug">$<$<CONFIG:Release>:"_Release">$<$<CONFIG:MinSizeRel>:"_MinSizeRel">$<$<CONFIG:RelWithDebInfo>:"_RelWithDebInfo">)
-
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
 set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
@@ -173,7 +170,7 @@ add_subdirectory(3rdparty/BuildInc)
 
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
-	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h>)
+	COMMAND BuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h>)
 
 ########################################################
 ##### TESTS ############################################
@@ -192,7 +189,6 @@ endif()
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>" > ${CMAKE_BINARY_DIR}/current_build_type
-	DEPENDS ${PROJECT}
 )
 
 ### outside of the building we read the last file content
@@ -209,7 +205,7 @@ endif()
 ### VERSION #################################################
 #############################################################
 
-file(READ ${CMAKE_SOURCE_DIR}/src/Headers/${PROJECT}Build.h BuildIdFile)
+file(READ ${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h BuildIdFile)
 string(REGEX MATCH "#define ${PROJECT}_BuildNumber ([0-9]*)" _ ${BuildIdFile})
 set(BuildNumber ${CMAKE_MATCH_1})
 string(REGEX MATCH "#define ${PROJECT}_MinorNumber ([0-9]*)" _ ${BuildIdFile})
@@ -222,7 +218,6 @@ message(STATUS "${PROJECT} Version to install : ${${PROJECT}_Version}")
 add_custom_command(
 	TARGET ${PROJECT} PRE_BUILD
 	COMMAND echo "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}_v${MajorNumber}.${MinorNumber}.${BuildNumber}" > ${CMAKE_SOURCE_DIR}/VERSION
-	DEPENDS ${PROJECT}
 )
 
 #############################################################
