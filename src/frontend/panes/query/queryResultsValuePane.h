@@ -28,11 +28,11 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 
-class DBManager;
-class MessagePane : public AbstractPane {
-    IMPLEMENT_SHARED_SINGLETON(MessagePane)
-    DISABLE_CONSTRUCTORS(MessagePane)
-    DISABLE_DESTRUCTORS(MessagePane)
+class DatabaseManager;
+class QueryResultsValuePane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(QueryResultsValuePane)
+    DISABLE_CONSTRUCTORS(QueryResultsValuePane)
+    DISABLE_DESTRUCTORS(QueryResultsValuePane)
 public:
     bool Init() override;
     void Unit() override;

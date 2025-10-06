@@ -17,7 +17,7 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "DBHelper.h"
+#include "databaseHelper.h"
 
 #include <cstring>
 #include <fstream>
@@ -33,15 +33,15 @@ void SqliteDbDeleter::operator()(sqlite3* vDb) const noexcept {
     }
 }
 
-const int32_t DBHelper::m_maxInsertAttempts = 50;
+const int32_t DatabaseHelper::m_maxInsertAttempts = 50;
 
-bool DBHelper::init(const std::string& vDBFilePathName) noexcept {
+bool DatabaseHelper::init(const std::string& vDBFilePathName) noexcept {
     unit();
     m_dataBaseFilePathName = vDBFilePathName;
     return true;
 }
 
-void DBHelper::unit() noexcept {
+void DatabaseHelper::unit() noexcept {
     m_closeDB();
     m_dataBaseFilePathName.clear();
     m_lastErrorMsg.clear();
@@ -50,7 +50,7 @@ void DBHelper::unit() noexcept {
 
 // DATABASE FILE
 
-bool DBHelper::isFileASqlite3DB(const std::string& vDBFilePathName) const noexcept {
+bool DatabaseHelper::isFileASqlite3DB(const std::string& vDBFilePathName) const noexcept {
     auto res = false;
     std::ifstream fileStream(vDBFilePathName, std::ios_base::binary);
     if (fileStream.is_open()) {
@@ -64,7 +64,7 @@ bool DBHelper::isFileASqlite3DB(const std::string& vDBFilePathName) const noexce
     return res;
 }
 
-bool DBHelper::createDBFile(const std::string& vDBFilePathName) noexcept {
+bool DatabaseHelper::createDBFile(const std::string& vDBFilePathName) noexcept {
     if (vDBFilePathName.empty()) {
         return false;
     }
@@ -73,11 +73,11 @@ bool DBHelper::createDBFile(const std::string& vDBFilePathName) noexcept {
     return m_createDB();
 }
 
-bool DBHelper::openDBFile() noexcept {
+bool DatabaseHelper::openDBFile() noexcept {
     return openDBFile(m_dataBaseFilePathName);
 }
 
-bool DBHelper::openDBFile(const std::string& vDBFilePathName) noexcept {
+bool DatabaseHelper::openDBFile(const std::string& vDBFilePathName) noexcept {
     if (m_sqliteDb != nullptr) {
         // already open
         return true;
@@ -86,13 +86,13 @@ bool DBHelper::openDBFile(const std::string& vDBFilePathName) noexcept {
     return m_openDB();
 }
 
-void DBHelper::closeDBFile() noexcept {
+void DatabaseHelper::closeDBFile() noexcept {
     m_closeDB();
 }
 
 // TRANSACTIONS
 
-bool DBHelper::beginDBTransaction() noexcept {
+bool DatabaseHelper::beginDBTransaction() noexcept {
     if (!m_openDB()) {
         return false;
     }
@@ -104,25 +104,25 @@ bool DBHelper::beginDBTransaction() noexcept {
     return false;
 }
 
-void DBHelper::commitDBTransaction() noexcept {
+void DatabaseHelper::commitDBTransaction() noexcept {
     (void)m_debugSqlite3Exec(__FUNCTION__, "COMMIT;");
     m_transactionStarted = false;
     m_closeDB();
 }
 
-void DBHelper::rollbackDBTransaction() noexcept {
+void DatabaseHelper::rollbackDBTransaction() noexcept {
     (void)m_debugSqlite3Exec(__FUNCTION__, "ROLLBACK;");
     m_transactionStarted = false;
 }
 
 // MISC
 
-std::string DBHelper::getLastErrorMsg() const noexcept {
+std::string DatabaseHelper::getLastErrorMsg() const noexcept {
     return m_lastErrorMsg;
 }
 
-QueryResult DBHelper::executeQuery(const std::string& vSql) noexcept {
-    QueryResult result{};
+datas::QueryResult DatabaseHelper::executeQuery(const std::string& vSql) noexcept {
+    datas::QueryResult result{};
 
     if (!m_openDB()) {
         return result;
@@ -139,7 +139,7 @@ QueryResult DBHelper::executeQuery(const std::string& vSql) noexcept {
     result.columns.reserve(colCount);
 
     for (int i = 0; i < colCount; ++i) {
-        ColumnInfo ci;
+        datas::ColumnInfo ci;
         ci.name = sqlite3_column_name(stmt, i);
         const char* decl = sqlite3_column_decltype(stmt, i);
         ci.declType = decl ? decl : "";
@@ -149,7 +149,7 @@ QueryResult DBHelper::executeQuery(const std::string& vSql) noexcept {
     while (true) {
         int stepRes = sqlite3_step(stmt);
         if (stepRes == SQLITE_ROW) {
-            Row row;
+            datas::Row row;
             row.values.reserve(colCount);
             for (int i = 0; i < colCount; ++i) {
                 int type = sqlite3_column_type(stmt, i);
@@ -183,7 +183,7 @@ QueryResult DBHelper::executeQuery(const std::string& vSql) noexcept {
 
 // PRIVATE
 
-bool DBHelper::m_openDB() noexcept {
+bool DatabaseHelper::m_openDB() noexcept {
     if (m_sqliteDb != nullptr) {
         return true;
     }
@@ -206,7 +206,7 @@ bool DBHelper::m_openDB() noexcept {
     return true;
 }
 
-bool DBHelper::m_createDB() noexcept {
+bool DatabaseHelper::m_createDB() noexcept {
     m_closeDB();
 
     sqlite3* rawHandle = nullptr;
@@ -228,13 +228,13 @@ bool DBHelper::m_createDB() noexcept {
     return true;
 }
 
-void DBHelper::m_closeDB() noexcept {
+void DatabaseHelper::m_closeDB() noexcept {
     if (!m_transactionStarted) {
         m_sqliteDb.reset();
     }
 }
 
-bool DBHelper::m_enableForeignKey() noexcept {
+bool DatabaseHelper::m_enableForeignKey() noexcept {
     if (m_sqliteDb == nullptr) {
         return false;
     }
@@ -246,7 +246,7 @@ bool DBHelper::m_enableForeignKey() noexcept {
     return true;
 }
 
-int32_t DBHelper::m_debugSqlite3Exec(  //
+int32_t DatabaseHelper::m_debugSqlite3Exec(  //
     const std::string& vDebugLabel,    //
     const std::string& vSqlQuery) noexcept {
     (void)vDebugLabel;  // kept for parity, can be used to log SQL filenames in debug
@@ -263,7 +263,7 @@ int32_t DBHelper::m_debugSqlite3Exec(  //
     return rc;
 }
 
-int32_t DBHelper::m_debugSqlite3PrepareV2(  //
+int32_t DatabaseHelper::m_debugSqlite3PrepareV2(  //
     const std::string& vDebugLabel,         //
     const std::string& vSqlQuery,           //
     int32_t vNBytes,                        //

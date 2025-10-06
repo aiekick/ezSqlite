@@ -52,3 +52,6 @@
 /res/appicon.aps
 /.cache
 /VERSION
+/cmake-build-debug
+/.idea
+/build_web

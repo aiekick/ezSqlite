@@ -27,10 +27,10 @@
 #include <backend/backend.h>
 #include <frontend/frontend.h>
 
-#include <backend/managers/dbManager.h>
+#include <backend/managers/databaseManager.h>
 
 #include <imguipack.h>
-#include <frontend/panes/MessagePane.h>
+#include <frontend/panes/misc/messagePane.h>
 #include <frontend/helpers/locationHelper.h>
 
 // messaging
@@ -63,8 +63,18 @@ bool App::init(int argc, char** argv) {
     ret &= (LayoutManager::initSingleton() != nullptr);
     ret &= (Messaging::initSingleton() != nullptr);
     ret &= Backend::ref().init(*mp_app.get());
-    m_InitMessaging();
-    return true;
+    // init messaging
+    Messaging::ref().AddCategory(MESSAGING_CODE_INFOS, "Infos(s)", MESSAGING_LABEL_INFOS, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_WARNINGS, "Warnings(s)", MESSAGING_LABEL_WARNINGS, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_ERRORS, "Errors(s)", MESSAGING_LABEL_ERRORS, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+    Messaging::ref().AddCategory(MESSAGING_CODE_DEBUG, "Debug(s)", MESSAGING_LABEL_DEBUG, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+    Messaging::ref().SetLayoutManager(&LayoutManager::ref());
+    ez::Log::ref().setStandardLogMessageFunctor([](const int& vType, const std::string& vMessage) {
+        MessageData msg_datas;
+        const auto& type = vType;
+        Messaging::ref().AddMessage(vMessage, type, false, msg_datas, {});
+    });
+    return ret;
 }
 
 void App::unit() {
@@ -76,17 +86,4 @@ void App::unit() {
 
 void App::run() {
     Backend::ref().run();
-}
-
-void App::m_InitMessaging() {
-    Messaging::ref().AddCategory(MESSAGING_CODE_INFOS, "Infos(s)", MESSAGING_LABEL_INFOS, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
-    Messaging::ref().AddCategory(MESSAGING_CODE_WARNINGS, "Warnings(s)", MESSAGING_LABEL_WARNINGS, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
-    Messaging::ref().AddCategory(MESSAGING_CODE_ERRORS, "Errors(s)", MESSAGING_LABEL_ERRORS, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
-    Messaging::ref().AddCategory(MESSAGING_CODE_DEBUG, "Debug(s)", MESSAGING_LABEL_DEBUG, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
-    Messaging::ref().SetLayoutManager(&LayoutManager::ref());
-    ez::Log::ref().setStandardLogMessageFunctor([](const int& vType, const std::string& vMessage) {
-        MessageData msg_datas;
-        const auto& type = vType;
-        Messaging::ref().AddMessage(vMessage, type, false, msg_datas, {});
-    });
 }

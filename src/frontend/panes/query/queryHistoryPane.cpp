@@ -17,22 +17,22 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "queryResultsValuePane.h"
-#include <backend/managers/dbManager.h>
-#include <backend/controller/controller.h>
+#include "queryHistoryPane.h"
+#include <backend/managers/databaseManager.h>
+#include <frontend/components/query/queryHistoryComp.h>
 
-bool QueryResultsValuePane::Init() {
+bool QueryHistoryPane::Init() {
     return true;
 }
 
-void QueryResultsValuePane::Unit() {
+void QueryHistoryPane::Unit() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-bool QueryResultsValuePane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryHistoryPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
@@ -45,8 +45,9 @@ bool QueryResultsValuePane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpen
             else
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;  // | ImGuiWindowFlags_MenuBar;
 #endif
-            if (DBManager::ref().isDatabaseLoaded()) {
-                Controller::ref().drawQueryResultValue();
+
+            if (DatabaseManager::ref().isDatabaseLoaded()) {
+                QueryHistoryComp::ref().drawHistory();
             }
         }
 
@@ -55,17 +56,17 @@ bool QueryResultsValuePane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpen
     return change;
 }
 
-bool QueryResultsValuePane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryHistoryPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
 
-bool QueryResultsValuePane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryHistoryPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);    
     return false;
 }
 
-bool QueryResultsValuePane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryHistoryPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

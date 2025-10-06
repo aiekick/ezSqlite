@@ -17,56 +17,57 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <frontend/panes/dbStructurePane.h>
-#include <backend/managers/dbManager.h>
-#include <backend/controller/controller.h>
+#include <frontend/panes/query/queryEditorPane.h>
+#include <backend/managers/databaseManager.h>
+#include <frontend/components/query/queryEditorComp.h>
 
-bool DBStructurePane::Init() {
+bool QueryEditorPane::Init() {
+    if (ImGui::GetIO().Fonts->Fonts.size() > 1U) {
+        QueryEditorComp::ref().setFont(ImGui::GetIO().Fonts->Fonts[1]);
+    }
+    QueryEditorComp::ref().setLanguage(TextEditor::Language::Sql());
     return true;
 }
 
-void DBStructurePane::Unit() {
+void QueryEditorPane::Unit() {
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-bool DBStructurePane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryEditorPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
-        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;  //| ImGuiWindowFlags_MenuBar;
+        static ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
         if (ImGui::Begin(GetName().c_str(), vOpened, flags)) {
 #ifdef USE_DECORATIONS_FOR_RESIZE_CHILD_WINDOWS
             auto win = ImGui::GetCurrentWindowRead();
             if (win->Viewport->Idx != 0)
                 flags |= ImGuiWindowFlags_NoResize;  // | ImGuiWindowFlags_NoTitleBar;
             else
-                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;  //| ImGuiWindowFlags_MenuBar;
+                flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
-
-            if (DBManager::ref().isDatabaseLoaded()) {
-                Controller::ref().drawDatabaseStructure();
-            }
+            QueryEditorComp::ref().render();
         }
-
         ImGui::End();
     }
     return change;
 }
 
-bool DBStructurePane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryEditorPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
 
-bool DBStructurePane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryEditorPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);    
     return false;
 }
 
-bool DBStructurePane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryEditorPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

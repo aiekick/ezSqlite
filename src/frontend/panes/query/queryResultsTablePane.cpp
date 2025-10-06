@@ -17,27 +17,22 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <frontend/panes/codeEditorPane.h>
-#include <backend/managers/dbManager.h>
-#include <frontend/components/codeEditor.h>
+#include "queryResultsTablePane.h"
+#include <backend/managers/databaseManager.h>
+#include <frontend/components/query/queryResultComp.h>
 
-bool CodeEditorPane::Init() {
-    if (ImGui::GetIO().Fonts->Fonts.size() > 1U) {
-        CodeEditor::ref().setFont(ImGui::GetIO().Fonts->Fonts[1]);
-    }
-    CodeEditor::ref().setLanguage(TextEditor::Language::Sql());
+bool QueryResultsTablePane::Init() {
     return true;
 }
 
-void CodeEditorPane::Unit() {
+void QueryResultsTablePane::Unit() {
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-bool CodeEditorPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryResultsTablePane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     bool change = false;
     if (vOpened != nullptr && *vOpened) {
@@ -50,24 +45,27 @@ bool CodeEditorPane::DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened, ImG
             else
                 flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar;
 #endif
-            CodeEditor::ref().render();
+            if (DatabaseManager::ref().isDatabaseLoaded()) {
+                QueryResultComp::ref().drawTable();
+            }
         }
+
         ImGui::End();
     }
     return change;
 }
 
-bool CodeEditorPane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryResultsTablePane::DrawOverlays(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }
 
-bool CodeEditorPane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryResultsTablePane::DrawDialogsAndPopups(const uint32_t& /*vCurrentFrame*/, const ImRect& /*vRect*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);    
     return false;
 }
 
-bool CodeEditorPane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
+bool QueryResultsTablePane::DrawWidgets(const uint32_t& /*vCurrentFrame*/, ImGuiContext* vContextPtr, void* /*vUserDatas*/) {
     ImGui::SetCurrentContext(vContextPtr);
     return false;
 }

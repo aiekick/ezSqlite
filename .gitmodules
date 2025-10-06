@@ -6,10 +6,6 @@
 	path = 3rdparty/imguipack
 	url = https://github.com/aiekick/ImGuiPack.git
 	branch = master
-[submodule "3rdparty/BuildInc"]
-	path = 3rdparty/BuildInc
-	url = https://github.com/aiekick/BuildInc.git
-	branch = master
 [submodule "3rdparty/glad"]
 	path = 3rdparty/glad
 	url = https://github.com/Dav1dde/glad.git

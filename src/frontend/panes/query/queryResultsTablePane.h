@@ -28,7 +28,7 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 
-class DBManager;
+class DatabaseManager;
 class QueryResultsTablePane : public AbstractPane {
     IMPLEMENT_SHARED_SINGLETON(QueryResultsTablePane)
     DISABLE_CONSTRUCTORS(QueryResultsTablePane)

@@ -28,11 +28,11 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 
-class DBManager;
-class DBStructurePane : public AbstractPane {
-    IMPLEMENT_SHARED_SINGLETON(DBStructurePane)
-    DISABLE_CONSTRUCTORS(DBStructurePane)
-    DISABLE_DESTRUCTORS(DBStructurePane)
+class DatabaseManager;
+class QueryEditorPane : public AbstractPane {
+    IMPLEMENT_SHARED_SINGLETON(QueryEditorPane)
+    DISABLE_CONSTRUCTORS(QueryEditorPane)
+    DISABLE_DESTRUCTORS(QueryEditorPane)
 public:
     bool Init() override;
     void Unit() override;
@@ -40,4 +40,5 @@ public:
     bool DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawPanes(const uint32_t& vCurrentFrame, bool* vOpened = nullptr, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
     bool DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr = nullptr, void* vUserDatas = nullptr) override;
+
 };

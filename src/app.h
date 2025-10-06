@@ -34,7 +34,4 @@ public:
     bool init(int argc, char** argv);
     void run();
     void unit();
-
-private:
-    void m_InitMessaging();
 };

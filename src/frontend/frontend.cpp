@@ -17,22 +17,30 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Frontend.h"
+#include "frontend.h"
 
 #include <imguipack.h>
+
+#include <ezlibs.hpp>
+#include <GLFW/glfw3.h>
+#include <freetype/freetype.h>
 
 #include <backend/backend.h>
 #include <headers/ezSqliteBuild.h>
 
-#include <backend/managers/dbManager.h>
-#include <backend/controller/controller.h>
+#include <backend/managers/databaseManager.h>
 
-#include <frontend/panes/messagePane.h>
-#include <frontend/panes/codeEditorPane.h>
-#include <frontend/panes/dbStructurePane.h>
-#include <frontend/panes/queryHistoryPane.h>
-#include <frontend/panes/queryResultsTablePane.h>
-#include <frontend/panes/queryResultsValuePane.h>
+#include <frontend/panes/misc/messagePane.h>
+#include <frontend/panes/query/queryEditorPane.h>
+#include <frontend/panes/schema/schemaPane.h>
+#include <frontend/panes/query/queryHistoryPane.h>
+#include <frontend/panes/query/queryResultsTablePane.h>
+#include <frontend/panes/query/queryResultsValuePane.h>
+
+#include <frontend/components/schema/databaseSchemaComp.h>
+#include <frontend/components/query/queryHistoryComp.h>
+#include <frontend/components/query/queryEditorComp.h>
+#include <frontend/components/query/queryResultComp.h>
 
 #include <frontend/helpers/locationHelper.h>
 
@@ -50,12 +58,16 @@
 #define CAMERA_ICON ICON_SDFMT_CAMCORDER
 #define GIZMO_ICON ICON_SDFMT_AXIS_ARROW
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 using namespace std::placeholders;
 
 //////////////////////////////////////////////////////////////////////////////////
 //// PUBLIC //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
+// clang-format off
 bool Frontend::init() {
     m_build_themes();
 
@@ -63,28 +75,46 @@ bool Frontend::init() {
     ImGuiFileDialog::initSingleton();
     LocationHelper::initSingleton();
 
-    CodeEditorPane::initSingleton();
-    DBStructurePane::initSingleton();
+    QueryEditorPane::initSingleton();
+    DatabaseInfosPane::initSingleton();
     QueryHistoryPane::initSingleton();
     QueryResultsTablePane::initSingleton();
     QueryResultsValuePane::initSingleton();
     MessagePane::initSingleton();
+        
+    DatabaseSchemaComp::initSingleton();
+    QueryHistoryComp::initSingleton();
+    QueryEditorComp::initSingleton();
+    QueryResultComp::initSingleton();
 
     LocationHelper::ref().init();
     LayoutManager::ref().Init("Panes", "Default Layout");
 
     // Views
-    LayoutManager::ref().AddPane(QueryResultsTablePane::ref(), "Results", "", "CENTRAL", 0.0f, true, true);
-    LayoutManager::ref().AddPane(MessagePane::ref(), "Console", "", "BOTTOM", 0.25f, false, false);
-    LayoutManager::ref().AddPane(CodeEditorPane::ref(), "Editor", "", "TOP", 0.25f, true, true);
-    LayoutManager::ref().AddPane(DBStructurePane::ref(), "Structure", "", "LEFT", 0.25f, true, false);
-    LayoutManager::ref().AddPane(QueryHistoryPane::ref(), "History", "", "LEFT/BOTTOM", 0.4f, true, false);
-    LayoutManager::ref().AddPane(QueryResultsValuePane::ref(), "Value", "", "BOTTOM", 0.25f, true, false);
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(QueryResultsTablePane::ref(),"Query results")
+            .setMenu("results", "Query").setDisposalCentral().setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(MessagePane::ref(),"Console")
+            .setMenu("Console").setDisposalSide("BOTTOM", 0.25f));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(QueryEditorPane::ref(),"Query editor")
+            .setMenu("editor", "Query").setDisposalSide("TOP", 0.25f).setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(DatabaseInfosPane::ref(),"DatabaseDesc structure")
+            .setMenu("structure", "DatabaseDesc").setDisposalSide("LEFT", 0.25f).setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(QueryHistoryPane::ref(),"Queries history")
+            .setMenu("history", "Query").setDisposalSide("LEFT/BOTTOM", 0.4f).setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(QueryResultsValuePane::ref(),"Query field value")
+            .setMenu("field value", "Query").setDisposalSide("BOTTOM", 0.25f).setDefaultOpened(true));
 
     // InitPanes is done in m_InitPanes, because a specific order is needed
 
-    return m_build();
+    return true;
 }
+// clang-format on
 
 void Frontend::unit() {
     LocationHelper::ref().unit();
@@ -95,21 +125,22 @@ void Frontend::unit() {
     ImGuiFileDialog::unitSingleton();
     LocationHelper::unitSingleton();
 
-    CodeEditorPane::unitSingleton();
-    DBStructurePane::unitSingleton();
+    DatabaseSchemaComp::unitSingleton();
+    QueryHistoryComp::unitSingleton();
+    QueryEditorComp::unitSingleton();
+    QueryResultComp::unitSingleton();
+
+    QueryEditorPane::unitSingleton();
+    DatabaseInfosPane::unitSingleton();
     QueryHistoryPane::unitSingleton();
     QueryResultsValuePane::unitSingleton();
     QueryResultsTablePane::unitSingleton();
     MessagePane::unitSingleton();
 }
 
-bool Frontend::isValid() const {
-    return false;
-}
+bool Frontend::isValid() const { return false; }
 
-bool Frontend::isThereAnError() const {
-    return false;
-}
+bool Frontend::isThereAnError() const { return false; }
 
 void Frontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
     const auto context_ptr = ImGui::GetCurrentContext();
@@ -124,19 +155,10 @@ void Frontend::Display(const uint32_t& vCurrentFrame, const ImRect& vRect) {
         m_drawMainStatusBar();
 
         if (LayoutManager::ref().BeginDockSpace(ImGuiDockNodeFlags_PassthruCentralNode)) {
-            /*if (Backend::ref().GetBackendDatasRef().canWeTuneGizmo) {
-                const auto viewport = ImGui::GetMainViewport();
-                ImGuizmo::SetDrawlist(ImGui::GetCurrentWindow()->DrawList);
-                ImGuizmo::SetRect(viewport->Pos.x, viewport->Pos.y, viewport->Size.x, viewport->Size.y);
-                ImRect rc(viewport->Pos.x, viewport->Pos.y, viewport->Size.x, viewport->Size.y);
-                DrawOverlays(vCurrentFrame, rc, context_ptr, {});
-            }*/
             LayoutManager::ref().EndDockSpace();
         }
 
-        if (LayoutManager::ref().DrawPanes(vCurrentFrame, context_ptr, {})) {
-
-        }
+        if (LayoutManager::ref().DrawPanes(vCurrentFrame, context_ptr, {})) {}
 
         DrawDialogsAndPopups(vCurrentFrame, m_displayRect, context_ptr, {});
 
@@ -158,25 +180,11 @@ bool Frontend::DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, 
 bool Frontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas) {
     m_actionsSystem.executeFirstConditionalAction();
     m_actionsSystem.runImmediateActions();
-
     LayoutManager::ref().DrawDialogsAndPopups(vCurrentFrame, vRect, vContextPtr, vUserDatas);
-
-    if (m_showImGui) {
-        ImGui::ShowDemoWindow(&m_showImGui);
-    }
-
-    if (m_showImPlot) {
-        ImPlot::ShowDemoWindow(&m_showImPlot);
-    }
-
-    if (m_showMetric) {
-        ImGui::ShowMetricsWindow(&m_showMetric);
-    }
-
-    if (m_showAboutDialog) {
-        m_drawAboutDialog();
-    }
-
+    if (m_showImGui) { ImGui::ShowDemoWindow(&m_showImGui); }
+    if (m_showImPlot) { ImPlot::ShowDemoWindow(&m_showImPlot); }
+    if (m_showMetric) { ImGui::ShowMetricsWindow(&m_showMetric); }
+    if (m_showAboutDialog) { m_drawAboutDialog(); }
     return false;
 }
 
@@ -230,25 +238,23 @@ void Frontend::m_drawAboutDialog() {
         ImGui::Spring(0.0f);
         ImGui::TextColored(paragraphColor, "used libraries :");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("ezlibs (MIT)", "https://github.com/aiekick/ezLibs");
+        ImGui::ClickableTextUrl("ezlibs v" ezLibs_BuildId " (MIT)", "https://github.com/aiekick/ezLibs");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("Freetype v2.13.0 (ZLIB)", "https://github.com/freetype/freetype");
+        ImGui::ClickableTextUrl("Freetype v" STR(FREETYPE_MAJOR) "." STR(FREETYPE_MINOR) "." STR(FREETYPE_PATCH) " (ZLIB)", "https://github.com/freetype/freetype");
         ImGui::Spring(0.0f);
         ImGui::ClickableTextUrl("Glad v2.0.8 (MIT)", "https://github.com/Dav1dde/glad");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("Glfw v3.4 (ZLIB)", "https://github.com/glfw/glfw");
+        ImGui::ClickableTextUrl("Glfw v" STR(GLFW_VERSION_MAJOR) "." STR(GLFW_VERSION_MINOR) "." STR(GLFW_VERSION_REVISION) " (ZLIB)", "https://github.com/glfw/glfw");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("ImGui docking + stack layout v1.92 (MIT)", "https://github.com/ocornut/imgui");
+        ImGui::ClickableTextUrl("ImGui docking + stack layout v" IMGUI_VERSION " (MIT)", "https://github.com/ocornut/imgui");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("ImGuiFileDialog v0.6.8 (MIT)", "https://github.com/aiekick/ImGuiFileDialog");
+        ImGui::ClickableTextUrl("ImGuiFileDialog " IGFD_VERSION " (MIT)", "https://github.com/aiekick/ImGuiFileDialog");
         ImGui::Spring(0.0f);
-        ImGui::ClickableTextUrl("Sqlite3 v3.50.4 (Unlicense / BSD)", "https://github.com/sqlite/sqlite");
+        ImGui::ClickableTextUrl("Sqlite3 v" SQLITE_VERSION " (Unlicense / BSD)", "https://github.com/sqlite/sqlite");
         ImGui::Spring(0.0f);
         ImGui::Separator();
         ImGui::Spring(0.0f);
-        if (ImGui::ContrastedButton("Close")) {
-            m_showAboutDialog = false;
-        }
+        if (ImGui::ContrastedButton("Close")) { m_showAboutDialog = false; }
         ImGui::Spring(0.0f);
         ImGui::EndVertical();
 
@@ -262,28 +268,14 @@ void Frontend::m_drawMainMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
         float full_width = ImGui::GetContentRegionAvail().x;
         if (ImGui::BeginMenu(" Database")) {
-            if (ImGui::MenuItem(" New database")) {
-                ActionMenuNewDatabase();
-            }
-
-            if (ImGui::MenuItem(" Open database")) {
-                ActionMenuOpenDatabase();
-            }
-
-            if (DBManager::ref().isDatabaseLoaded()) {
+            if (ImGui::MenuItem(" New database")) { ActionMenuNewDatabase(); }
+            if (ImGui::MenuItem(" Open database")) { ActionMenuOpenDatabase(); }
+            if (DatabaseManager::ref().isDatabaseLoaded()) {
                 ImGui::Separator();
-
-                if (ImGui::MenuItem(" Reopen database")) {
-                    ActionMenuReOpenDatabase();
-                }
-
+                if (ImGui::MenuItem(" Reopen database")) { ActionMenuReOpenDatabase(); }
                 ImGui::Separator();
-
-                if (ImGui::MenuItem(" Close database")) {
-                    ActionMenuCloseDatabase();
-                }
+                if (ImGui::MenuItem(" Close database")) { ActionMenuCloseDatabase(); }
             }
-
             ImGui::EndMenu();
         }
 
@@ -294,24 +286,13 @@ void Frontend::m_drawMainMenuBar() {
 
         ImGui::Spacing();
 
-        /*
-        if (ImGui::BeginMenu("Tools")) {
-            if (ImGui::BeginMenu("Styles")) {
-                ImGuiThemeHelper::ref().DrawMenu();
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenu();
-        }
-        */
-
         if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem(" About")) {
-                m_showAboutDialog = true;
-            }
+            if (ImGui::MenuItem(" About")) { m_showAboutDialog = true; }
             ImGui::EndMenu();
         }
+
 #if _DEBUG
-        if (ImGui::BeginMenu("Debug")) {
+        if (ImGui::BeginMenu("[ImGui]")) {
             ImGui::Separator();
             ImGui::MenuItem("Show ImGui", "", &m_showImGui);
             ImGui::MenuItem("Show ImGui Metric/Debug", "", &m_showMetric);
@@ -321,7 +302,7 @@ void Frontend::m_drawMainMenuBar() {
 #endif
 
         ImGui::SpacingFromStart((full_width - s_controller_menu_size) * 0.5f);
-        Controller::ref().drawMenu(s_controller_menu_size);
+        DatabaseManager::ref().drawMenu(s_controller_menu_size);
 
 #ifdef _DEBUG
         const auto label = ez::str::toStr("Dear ImGui %s (Docking)", ImGui::GetVersion());
@@ -353,8 +334,6 @@ void Frontend::m_drawMainStatusBar() {
         ImGui::Text("%s", fps.c_str());
 #endif
 
-        // Frontend::sAnyWindowsHovered |= ImGui::IsWindowHovered();
-
         ImGui::EndMainStatusBar();
     }
 }
@@ -364,40 +343,24 @@ void Frontend::m_drawMainStatusBar() {
 ///////////////////////////////////////////////////////
 
 void Frontend::ActionMenuNewDatabase() {
-    /*
-    new project :
-    -	unsaved :
-        -	add action : show unsaved dialog
-        -	add action : open dialog for new project file name
-    -	saved :
-        -	add action : open dialog for new project file name
-    */
     m_actionsSystem.clear();
     m_actionsSystem.pushBackConditonalAction([this]() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::ref().OpenDialog("NewDatabaseDlg", "New Database File", "Any files{((.*))}", config);
+        ImGuiFileDialog::ref().OpenDialog("NewDatabaseDlg", "New DatabaseDesc File", "Any files{((.*))}", config);
         return true;
     });
     m_actionsSystem.pushBackConditonalAction([this]() { return m_displayNewDatabaseDialog(); });
 }
 
 void Frontend::ActionMenuOpenDatabase() {
-    /*
-    open project :
-    -	unsaved :
-        -	add action : show unsaved dialog
-        -	add action : open project
-    -	saved :
-        -	add action : open project
-    */
     m_actionsSystem.clear();
     m_actionsSystem.pushBackConditonalAction([this]() {
         IGFD::FileDialogConfig config;
         config.countSelectionMax = 1;
         config.flags = ImGuiFileDialogFlags_Modal;
-        ImGuiFileDialog::ref().OpenDialog("OpenDatabaseDlg", "Open Database File", "Any files{((.*))}", config);
+        ImGuiFileDialog::ref().OpenDialog("OpenDatabaseDlg", "Open DatabaseDesc File", "Any files{((.*))}", config);
         return true;
     });
     m_actionsSystem.pushBackConditonalAction([this]() { return m_displayOpenDatabaseDialog(); });
@@ -416,30 +379,14 @@ void Frontend::ActionMenuImportDatas() {
 }
 
 void Frontend::ActionMenuReOpenDatabase() {
-    /*
-    re open project :
-    -	unsaved :
-        -	add action : show unsaved dialog
-        -	add action : re open project
-    -	saved :
-        -	add action : re open project
-    */
     m_actionsSystem.clear();
     m_actionsSystem.pushBackConditonalAction([]() {
-        Backend::ref().NeedToLoadDatabase(DBManager::ref().getDatabaseFilepathName());
+        Backend::ref().NeedToLoadDatabase(DatabaseManager::ref().getDatabaseFilepathName());
         return true;
     });
 }
 
 void Frontend::ActionMenuCloseDatabase() {
-    /*
-    Close project :
-    -	unsaved :
-        -	add action : show unsaved dialog
-        -	add action : Close project
-    -	saved :
-        -	add action : Close project
-    */
     m_actionsSystem.clear();
     m_actionsSystem.pushBackConditonalAction([]() {
         Backend::ref().NeedToCloseDatabase();
@@ -448,17 +395,7 @@ void Frontend::ActionMenuCloseDatabase() {
 }
 
 void Frontend::ActionWindowCloseApp() {
-    if (Backend::ref().IsNeedToCloseApp())
-        return;  // block next call to close app when running
-    /*
-    Close app :
-    -	unsaved :
-        -	add action : show unsaved dialog
-        -	add action : Close app
-    -	saved :
-        -	add action : Close app
-    */
-
+    if (Backend::ref().IsNeedToCloseApp()) { return; }
     m_actionsSystem.clear();
     m_actionsSystem.pushBackConditonalAction([]() {
         Backend::ref().CloseApp();
@@ -467,10 +404,7 @@ void Frontend::ActionWindowCloseApp() {
 }
 
 void Frontend::m_actionCancel() {
-    /*
-    -	cancel :
-        -	clear actions
-    */
+
     m_actionsSystem.clear();
     Backend::ref().NeedToCloseApp(false);
 }
@@ -489,7 +423,7 @@ bool Frontend::m_displayNewDatabaseDialog() {
         if (ImGuiFileDialog::ref().IsOk()) {
             auto file = ImGuiFileDialog::ref().GetFilePathName();
             Backend::ref().NeedToNewDatabase(file);
-        } else {             // cancel
+        } else {               // cancel
             m_actionCancel();  // we interrupts all actions
         }
 
@@ -510,7 +444,7 @@ bool Frontend::m_displayOpenDatabaseDialog() {
     if (ImGuiFileDialog::ref().Display("OpenDatabaseDlg", ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking, min, max)) {
         if (ImGuiFileDialog::ref().IsOk()) {
             Backend::ref().NeedToLoadDatabase(ImGuiFileDialog::ref().GetFilePathName());
-        } else {             // cancel
+        } else {               // cancel
             m_actionCancel();  // we interrupts all actions
         }
 
@@ -526,26 +460,13 @@ bool Frontend::m_displayOpenDatabaseDialog() {
 //// APP CLOSING //////////////////////////////////////
 ///////////////////////////////////////////////////////
 
-void Frontend::IWantToCloseTheApp() {
-    ActionWindowCloseApp();
-}
+void Frontend::IWantToCloseTheApp() { ActionWindowCloseApp(); }
 
 ///////////////////////////////////////////////////////
 //// DROP /////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 
-void Frontend::JustDropFiles(int count, const char** paths) {
-    assert(0);
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//// PRIVATE /////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-
-bool Frontend::m_build() {
-    bool ret = true;
-    return ret;
-}
+void Frontend::JustDropFiles(int count, const char** paths) { assert(0); }
 
 ///////////////////////////////////////////////////////
 //// CONFIGURATION ////////////////////////////////////
@@ -555,6 +476,10 @@ ez::xml::Nodes Frontend::getXmlNodes(const std::string& vUserDatas) {
     ez::xml::Node node;
     node.addChilds(ImGuiThemeHelper::ref().getXmlNodes("app"));
     node.addChilds(LayoutManager::ref().getXmlNodes("app"));
+    node.addChilds(DatabaseSchemaComp::ref().getXmlNodes("app"));
+    node.addChilds(QueryResultComp::ref().getXmlNodes("app"));
+    node.addChilds(QueryEditorComp::ref().getXmlNodes("app"));
+    node.addChilds(QueryHistoryComp::ref().getXmlNodes("app"));
     node.addChild("places").setContent(ImGuiFileDialog::ref().SerializePlaces());
 #ifdef _DEBUG
     node.addChild("showaboutdialog").setContent(m_showAboutDialog);
@@ -583,5 +508,9 @@ bool Frontend::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& 
 #endif
     ImGuiThemeHelper::ref().setFromXmlNodes(vNode, vParent, "app");
     LayoutManager::ref().setFromXmlNodes(vNode, vParent, "app");
+    DatabaseSchemaComp::ref().setFromXmlNodes(vNode, vParent, "app");
+    QueryResultComp::ref().setFromXmlNodes(vNode, vParent, "app");
+    QueryEditorComp::ref().setFromXmlNodes(vNode, vParent, "app");
+    QueryHistoryComp::ref().setFromXmlNodes(vNode, vParent, "app");
     return true;
 }

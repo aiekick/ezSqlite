@@ -77,7 +77,6 @@ private:  // actions
     void m_actionCancel();
     bool m_displayNewDatabaseDialog();
     bool m_displayOpenDatabaseDialog();
-    bool m_build();
     bool m_build_themes();
     void m_drawMainMenuBar();
     void m_drawMainStatusBar();

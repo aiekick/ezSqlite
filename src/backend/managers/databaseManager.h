@@ -22,13 +22,16 @@
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
 #include <ezlibs/ezSingleton.hpp>
+
+#include <headers/defs.h>
+
 #include <string>
 #include <memory>
 
-class DBManager : public ez::xml::Config {
-    IMPLEMENT_SINGLETON(DBManager)
-    DISABLE_CONSTRUCTORS(DBManager)
-    DISABLE_DESTRUCTORS(DBManager)
+class DatabaseManager : public ez::xml::Config {
+    IMPLEMENT_SINGLETON(DatabaseManager)
+    DISABLE_CONSTRUCTORS(DatabaseManager)
+    DISABLE_DESTRUCTORS(DatabaseManager)
 
 private:  // to save
     std::string m_databaseFilePathName;
@@ -37,6 +40,9 @@ private:  // to save
 
 private:  // dont save
     bool m_isLoaded = false;
+    datas::DatabasesDesc m_databases;
+    datas::QueryResult m_lastQueryResult;
+    bool m_needQueryExecution{};
 
 public:
     void clear();
@@ -47,6 +53,16 @@ public:
     bool isDatabaseLoaded() const;
 
     void newFrame();
+
+    // analyse
+    void clearAnalyze();
+    bool analyzeDatabase(const std::string& vDatabaseFilePathName);
+    const datas::DatabasesDesc& getAnalyzedDatabases() const;
+
+    bool executeQuery(const std::string& vQuery, const bool vSaveQuery, const bool vShowPane);
+    const datas::QueryResult& getLastQueryResult() const;
+
+    bool drawMenu(float& vOutWidth);
 
     std::string getDatabaseFilepathName() const;
 
