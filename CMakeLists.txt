@@ -5,16 +5,12 @@ set(PROJECT ezSqlite)
 project(${PROJECT} CXX)
 enable_language(C CXX)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+if(EMSCRIPTEN OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     set(BUILD_WEBASSEMBLY TRUE)
+    message(STATUS "Build target: WebAssembly (Emscripten)")
 else()
     set(BUILD_WEBASSEMBLY FALSE)
-endif()
-
-if (BUILD_WEBASSEMBLY)
-    message(STATUS "Building WebAssembly version with Emscripten")
-else()
-    message(STATUS "Building native version")
+    message(STATUS "Build target: Native")
 endif()
 
 option(USE_BUILDING_OF_TESTS "Enable the build of tests" OFF)
@@ -45,36 +41,45 @@ set(USE_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 # this option force all sahred lib to export theirs symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${USE_SHARED_LIBS} CACHE BOOL "" FORCE)
 
-if ("${CMAKE_EXE_LINKER_FLAGS}" STREQUAL "/machine:x64")
-	set(ARCH x64)
+if("${CMAKE_EXE_LINKER_FLAGS}" STREQUAL "/machine:x64")
+    set(ARCH x64)
 else()
-	set(ARCH x32)
+    set(ARCH x32)
 endif()
 
 if(NOT CMAKE_DEBUG_POSTFIX)
-  set(CMAKE_DEBUG_POSTFIX _debug)
+    set(CMAKE_DEBUG_POSTFIX _debug)
 endif()
 if(NOT CMAKE_RELEASE_POSTFIX)
-  set(CMAKE_RELEASE_POSTFIX) ## to config in file
+    set(CMAKE_RELEASE_POSTFIX) ## to config in file
 endif()
 if(NOT CMAKE_MINSIZEREL_POSTFIX)
-  set(CMAKE_MINSIZEREL_POSTFIX _minsizerel)
+    set(CMAKE_MINSIZEREL_POSTFIX _minsizerel)
 endif()
 if(NOT CMAKE_RELWITHDEBINFO_POSTFIX)
-  set(CMAKE_RELWITHDEBINFO_POSTFIX _reldeb)
+    set(CMAKE_RELWITHDEBINFO_POSTFIX _reldeb)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zo /std=c++17")
-    add_definitions(-D_USE_MATH_DEFINES)
-    add_definitions(-DMSVC)
-	add_definitions(-DNOMINMAX)
-else ()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zo /std:c++17")
+    add_definitions(-D_USE_MATH_DEFINES -DMSVC -DNOMINMAX)
+else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17 -Wextra -Wpedantic -Wunused-parameter -Wno-unknown-pragmas")
-endif ()
+
+    if(NOT BUILD_WEBASSEMBLY)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+    endif()
+
+    if((CMAKE_BUILD_TYPE STREQUAL "Debug") OR
+        ($<CONFIG> STREQUAL "Debug"))
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    endif()
+endif()
 
 if(WIN32)
-	add_definitions(-DWIN32)
+    add_definitions(-DWIN32)
 endif()
 
 add_definitions(-DNEW_SINGLETON)
@@ -88,15 +93,15 @@ add_definitions(-DCUSTOM_IMWIDGETS_CONFIG="${CMAKE_SOURCE_DIR}/src/headers/custo
 add_definitions(-DCUSTOM_IMGUIFILEDIALOG_CONFIG="${CMAKE_SOURCE_DIR}/src/headers/customImGuiFileDialogConfig.h")
 add_definitions(-DCUSTOM_THEME_HELPER_CONFIG_HEADER="${CMAKE_SOURCE_DIR}/src/headers/customImGuiThemeHelperConfigHeader.h")
 
-if (BUILD_WEBASSEMBLY)
-	add_definitions(-DEMSCRIPTEN)
+if(BUILD_WEBASSEMBLY)
+    add_definitions(-DEMSCRIPTEN)
     add_definitions(-DIMGUI_IMPL_OPENGL_ES3)
     remove_definitions(-DWIN32)
     remove_definitions(-DMSVC)
     remove_definitions(-D_CRT_SECURE_NO_WARNINGS)
 else()
-	add_definitions(${GLFW_DEFINITIONS})
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(${GLFW_DEFINITIONS})
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 include(cmake/3rdparty.cmake)
@@ -105,9 +110,12 @@ include(cmake/3rdparty.cmake)
 ###########################################################
 ###########################################################
 
-# Plugin Apis for have it the visual studio tree of the App
-file(GLOB_RECURSE APIS_SOURCES ${CMAKE_SOURCE_DIR}/apis/*.*)
-source_group(TREE ${CMAKE_SOURCE_DIR}/apis PREFIX PluginApis FILES ${APIS_SOURCES})
+
+if(NOT BUILD_WEBASSEMBLY)
+    # Plugin Apis for have it the visual studio tree of the App
+    file(GLOB_RECURSE APIS_SOURCES ${CMAKE_SOURCE_DIR}/apis/*.*)
+    source_group(TREE ${CMAKE_SOURCE_DIR}/apis PREFIX PluginApis FILES ${APIS_SOURCES})
+endif()
 
 # Main sources
 file(GLOB MAIN_SOURCES ${CMAKE_SOURCE_DIR}/main.cpp)
@@ -117,46 +125,48 @@ source_group(main FILES ${MAIN_SOURCES})
 file(GLOB_RECURSE SRC_SOURCES ${CMAKE_SOURCE_DIR}/src/*.*)
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX src FILES ${SRC_SOURCES})
 
-# cmake Sources for have it the visual studio tree of the App
-file(GLOB_RECURSE PROJECT_CMAKE_FILES ${CMAKE_SOURCE_DIR}/cmake/*.cmake)
-source_group(TREE ${CMAKE_SOURCE_DIR}/cmake PREFIX cmake FILES ${PROJECT_CMAKE_FILES})
+if(NOT BUILD_WEBASSEMBLY)
+    # cmake Sources for have it the visual studio tree of the App
+    file(GLOB_RECURSE PROJECT_CMAKE_FILES ${CMAKE_SOURCE_DIR}/cmake/*.cmake)
+    source_group(TREE ${CMAKE_SOURCE_DIR}/cmake PREFIX cmake FILES ${PROJECT_CMAKE_FILES})
+endif()
 
-file(GLOB IMGUI_IMPL_SOURCES 
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_glfw.cpp
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_glfw.h
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_opengl3.cpp
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_opengl3.h
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/misc/freetype/imgui_freetype.cpp
-	${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/misc/freetype/imgui_freetype.h)
+file(GLOB IMGUI_IMPL_SOURCES
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_glfw.cpp
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_glfw.h
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_opengl3.cpp
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/backends/imgui_impl_opengl3.h
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/misc/freetype/imgui_freetype.cpp
+    ${CMAKE_SOURCE_DIR}/3rdparty/imguipack/3rdparty/imgui_docking/misc/freetype/imgui_freetype.h)
 source_group(src/ImGuiImpl FILES ${IMGUI_IMPL_SOURCES})
 
-if (MSVC)
-	set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_SOURCE_DIR}/res/appicon.rc")
+if(MSVC)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_SOURCE_DIR}/res/appicon.rc")
 endif()
 
 add_executable(${PROJECT}
-	${SRC_SOURCES}
-	${MAIN_SOURCES}
-	${APIS_SOURCES}
-	${EZ_LIBS_SOURCES}
-	${IMGUI_IMPL_SOURCES}
-	${PROJECT_CMAKE_FILES}
-	${APP_ICON_RESOURCE_WINDOWS}
+    ${SRC_SOURCES}
+    ${MAIN_SOURCES}
+    ${APIS_SOURCES}
+    ${EZ_LIBS_SOURCES}
+    ${IMGUI_IMPL_SOURCES}
+    ${PROJECT_CMAKE_FILES}
+    ${APP_ICON_RESOURCE_WINDOWS}
 )
 
-if (BUILD_WEBASSEMBLY)
+if(BUILD_WEBASSEMBLY)
     set_target_properties(${PROJECT} PROPERTIES
         OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}"
         SUFFIX ".html"
     )
 else()
-	set_target_properties(${PROJECT} PROPERTIES 
-		OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}"
-	)
+    set_target_properties(${PROJECT} PROPERTIES
+        OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${ARCH}"
+    )
 endif()
 
-if (MSVC)
-	set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(MSVC)
+    set_property(TARGET ${PROJECT} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -165,26 +175,32 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}")
 install(TARGETS ${PROJECT} DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 include_directories(
-	${CMAKE_SOURCE_DIR}/3rdparty
-	${IMGUIPACK_INCLUDE_DIRS}
-	${CMAKE_SOURCE_DIR}/src
-	${SQLITE3_INCLUDE_DIR}
-	${OPENGL_INCLUDE_DIR}
-	${CMAKE_SOURCE_DIR}
-	${PLOG_INCLUDE_DIR}
-	${GLFW_INCLUDE_DIR}
-	${GLAD_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/3rdparty
+    ${IMGUIPACK_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/src
+    ${SQLITE3_INCLUDE_DIR}
+    ${OPENGL_INCLUDE_DIR}
+    ${PLOG_INCLUDE_DIR}
+    ${GLFW_INCLUDE_DIR}
+    ${GLAD_INCLUDE_DIR}
 )
 
-if (BUILD_WEBASSEMBLY)
-    target_link_options(${PROJECT} PRIVATE
+if(BUILD_WEBASSEMBLY)
+    # Emscripten traite les chaînes commençant par -s comme des options de link
+    target_link_libraries(${PROJECT}
         ${IMGUIPACK_LIBRARIES}
         ${SQLITE3_LIBRARIES}
         "-s USE_GLFW=3"
         "-s USE_WEBGL2=1"
         "-s FULL_ES3=1"
+        "-s USE_GLFW=3"
+        "-s WASM=1"
+        "-s FORCE_FILESYSTEM=1"
         "-s ALLOW_MEMORY_GROWTH=1"
-        "-s INITIAL_MEMORY=128MB"
+        "-s INITIAL_MEMORY=256MB"
+        "-s ASSERTIONS=1"
+        "-s ERROR_ON_UNDEFINED_SYMBOLS=0"
+        "--bind"
     )
 else()
     target_link_libraries(${PROJECT}
@@ -205,21 +221,23 @@ set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBI
 ################# BUILD INCREMENT TOOL #################
 ########################################################
 
-## only for Debug
-if(NOT TARGET ezBuildInc)
-	add_subdirectory(3rdparty/ezLibs/Tests/ezBuildInc)
-endif()
+if(NOT BUILD_WEBASSEMBLY)
+    if(NOT TARGET ezBuildInc)
+        add_subdirectory(3rdparty/ezLibs/Tests/ezBuildInc)
+    endif()
 
-add_custom_command(
-	TARGET ${PROJECT} PRE_BUILD
-	COMMAND ezBuildInc ${PROJECT} $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h>)
+    add_custom_command(
+        TARGET ${PROJECT} PRE_BUILD
+        COMMAND ezBuildInc ${PROJECT} ${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h
+    )
+endif()
 
 ########################################################
 ##### TESTS ############################################
 ########################################################
 
 if(USE_BUILDING_OF_TESTS)
-	enable_testing()
+    enable_testing()
 endif()
 
 #############################################################
@@ -229,18 +247,18 @@ endif()
 ### will store the build config name in a file
 ### only during the building
 add_custom_command(
-	TARGET ${PROJECT} PRE_BUILD
-	COMMAND echo "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>" > ${CMAKE_BINARY_DIR}/current_build_type
+    TARGET ${PROJECT} PRE_BUILD
+    COMMAND echo "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>" > ${CMAKE_BINARY_DIR}/current_build_type
 )
 
 ### outside of the building we read the last file content
 ### for get the current building config name
-if (EXISTS ${CMAKE_BINARY_DIR}/current_build_type)
-	file(READ ${CMAKE_BINARY_DIR}/current_build_type CURRENT_BUILD_TYPE)
-	string(STRIP ${CURRENT_BUILD_TYPE} CURRENT_BUILD_TYPE) ### removing end line wrote by echo command
-	set(PROJECT_BUILD_CONFIG_NAME ${CURRENT_BUILD_TYPE} CACHE STRING "" FORCE)
-	message(STATUS "CURRENT BUILD CONFIG is : ${PROJECT_BUILD_CONFIG_NAME}")
-	set(${PROJECT}_OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}")
+if(EXISTS ${CMAKE_BINARY_DIR}/current_build_type)
+    file(READ ${CMAKE_BINARY_DIR}/current_build_type CURRENT_BUILD_TYPE)
+    string(STRIP ${CURRENT_BUILD_TYPE} CURRENT_BUILD_TYPE) ### removing end line wrote by echo command
+    set(PROJECT_BUILD_CONFIG_NAME ${CURRENT_BUILD_TYPE} CACHE STRING "" FORCE)
+    message(STATUS "CURRENT BUILD CONFIG is : ${PROJECT_BUILD_CONFIG_NAME}")
+    set(${PROJECT}_OUTPUT_NAME "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}")
 endif()
 
 #############################################################
@@ -258,8 +276,8 @@ set(${PROJECT}_Version "v${MajorNumber}_${MinorNumber}_${BuildNumber}")
 message(STATUS "${PROJECT} Version to install : ${${PROJECT}_Version}")
 
 add_custom_command(
-	TARGET ${PROJECT} PRE_BUILD
-	COMMAND echo "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}_v${MajorNumber}.${MinorNumber}.${BuildNumber}" > ${CMAKE_SOURCE_DIR}/VERSION
+    TARGET ${PROJECT} PRE_BUILD
+    COMMAND echo "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}_v${MajorNumber}.${MinorNumber}.${BuildNumber}" > ${CMAKE_SOURCE_DIR}/VERSION
 )
 
 #############################################################
@@ -267,8 +285,8 @@ add_custom_command(
 #############################################################
 
 install(TARGETS ${PROJECT} RUNTIME DESTINATION . COMPONENT APP_BINARY)
-install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .	COMPONENT APP_FILES)
-install(FILES ${CMAKE_SOURCE_DIR}/VERSION DESTINATION .	COMPONENT APP_FILES OPTIONAL)
+install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION . COMPONENT APP_FILES)
+install(FILES ${CMAKE_SOURCE_DIR}/VERSION DESTINATION . COMPONENT APP_FILES OPTIONAL)
 install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG DESTINATION . COMPONENT APP_FILES OPTIONAL)
 
 #############################################################
@@ -281,29 +299,29 @@ set(PROJECT_SHORTCUT_NAME "${PROJECT}_v${MajorNumber}.${MinorNumber}.${BuildNumb
 set(PROJECT_SHORTCUT_TARGET "${PROJECT}_${CMAKE_SYSTEM_NAME}_${PROJECT_BUILD_CONFIG_NAME}_${ARCH}")
 set(ORGANIZATION_NAME "FunParadigm")
 
-if (USE_PACKAGE_TO_NSIS_OR_ZIP)
-	set(CPACK_GENERATOR "NSIS")
-	set(CPACK_NSIS_MODIFY_PATH ON)
-	set(CPACK_NSIS_DISPLAY_NAME ${PROJECT_SHORTCUT_NAME})
-	set(CPACK_NSIS_PACKAGE_NAME ${PROJECT_SHORTCUT_NAME})
-	if (WIN32)
-		set(CPACK_PACKAGE_INSTALL_DIRECTORY "${ORGANIZATION_NAME}\\\\${PROJECT_PACKAGE_NAME}")
-		set(CPACK_NSIS_CREATE_ICONS_EXTRA
-			"CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROJECT_SHORTCUT_NAME}.lnk' '$INSTDIR\\\\${PROJECT_SHORTCUT_TARGET}.exe'"
-		)
-		set(CPACK_NSIS_DELETE_ICONS_EXTRA
-			"Delete '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROJECT_SHORTCUT_NAME}.lnk'"
-		)
-	endif()
+if(USE_PACKAGE_TO_NSIS_OR_ZIP)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    set(CPACK_NSIS_DISPLAY_NAME ${PROJECT_SHORTCUT_NAME})
+    set(CPACK_NSIS_PACKAGE_NAME ${PROJECT_SHORTCUT_NAME})
+    if(WIN32)
+        set(CPACK_PACKAGE_INSTALL_DIRECTORY "${ORGANIZATION_NAME}\\\\${PROJECT_PACKAGE_NAME}")
+        set(CPACK_NSIS_CREATE_ICONS_EXTRA
+            "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROJECT_SHORTCUT_NAME}.lnk' '$INSTDIR\\\\${PROJECT_SHORTCUT_TARGET}.exe'"
+        )
+        set(CPACK_NSIS_DELETE_ICONS_EXTRA
+            "Delete '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROJECT_SHORTCUT_NAME}.lnk'"
+        )
+    endif()
 else()
-	set(CPACK_GENERATOR "ZIP")
+    set(CPACK_GENERATOR "ZIP")
 endif()
 
 set(CPACK_MONOLITHIC_INSTALL 1)
 set(CPACK_THREADS 8)
 
-if (UNIX)
-	set(CPACK_SET_DESTDIR ON)
+if(UNIX)
+    set(CPACK_SET_DESTDIR ON)
 endif()
 
 set(CPACK_PACKAGE_VENDOR ${ORGANIZATION_NAME})
