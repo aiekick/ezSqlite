@@ -4,6 +4,7 @@
 #include <frontend/components/query/queryResultComp.h>
 
 #include <backend/managers/databaseManager.h>
+#include <backend/diagram/diagramManager.h>
 
 #include <frontend/panes/query/queryResultsTablePane.h>
 
@@ -44,7 +45,7 @@ void DatabaseSchemaComp::drawSchema() {
                 ImGui::PushID(database.name.c_str());
                 if (ImGui::TreeNodeEx("##database", tflags | ImGuiTreeNodeFlags_DefaultOpen, "Database : %s (%zu)", database.name.c_str(), database.tables.size())) {
                     if (query_to_execute.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                        // soemthing to load
+                        DiagramManager::ref().loadDatabase(database);
                     }
                     ImGui::Indent();
                     for (const auto& kv : database.tables) {

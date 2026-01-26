@@ -186,7 +186,7 @@ include_directories(
 )
 
 if(BUILD_WEBASSEMBLY)
-    # Emscripten traite les chaÃ®nes commenÃ§ant par -s comme des options de link
+    # Emscripten traite les chaînes commençant par -s comme des options de link
     target_link_libraries(${PROJECT}
         ${IMGUIPACK_LIBRARIES}
         ${SQLITE3_LIBRARIES}
@@ -209,6 +209,7 @@ else()
         ${OPENGL_LIBRARIES}
         ${GLFW_LIBRARIES}
         ${GLAD_LIBRARIES}
+        grapher
     )
 endif()
 

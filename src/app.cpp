@@ -57,7 +57,9 @@ bool App::init(int argc, char** argv) {
     ez::file::createDirectoryIfNotExist("sqlite3");
 #endif
     auto loc = std::setlocale(LC_ALL, ".UTF8");
-    if (!loc) { printf("setlocale fail to apply with this compiler. it seems the unicode will be NOK\n"); }
+    if (!loc) {
+        printf("setlocale fail to apply with this compiler. it seems the unicode will be NOK\n");
+    }
     bool ret = true;
     ret &= (Backend::initSingleton() != nullptr);
     ret &= (LayoutManager::initSingleton() != nullptr);
@@ -84,4 +86,6 @@ void App::unit() {
     Backend::unitSingleton();
 }
 
-void App::run() { Backend::ref().run(); }
+void App::run() {
+    Backend::ref().run();
+}

@@ -24,6 +24,7 @@
 #include <ezlibs/ezSqlite.hpp>
 
 #include <backend/helpers/databaseHelper.h>
+#include <backend/diagram/diagramManager.h>
 
 #include <frontend/components/query/queryEditorComp.h>
 #include <frontend/components/query/queryResultComp.h>
@@ -236,7 +237,7 @@ bool DatabaseManager::analyzeDatabase(const std::string& vDatabaseFilePathName) 
         }
     }
     if (!m_databases.databases.empty()) {
-        // something to load
+        DiagramManager::ref().loadDatabase(m_databases.databases.front());
     }
     return ret;
 }

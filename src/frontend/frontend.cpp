@@ -30,6 +30,8 @@
 
 #include <backend/managers/databaseManager.h>
 
+#include <frontend/panes/diagram/diagramEditorPane.h>
+#include <frontend/panes/diagram/diagramViewPane.h>
 #include <frontend/panes/misc/messagePane.h>
 #include <frontend/panes/query/queryEditorPane.h>
 #include <frontend/panes/schema/schemaPane.h>
@@ -75,6 +77,8 @@ bool Frontend::init() {
     ImGuiFileDialog::initSingleton();
     LocationHelper::initSingleton();
 
+    DiagramEditorPane::initSingleton();
+    DiagramViewPane::initSingleton();
     QueryEditorPane::initSingleton();
     DatabaseInfosPane::initSingleton();
     QueryHistoryPane::initSingleton();
@@ -94,6 +98,12 @@ bool Frontend::init() {
     LayoutManager::ref().AddPane(  
         LayoutPaneInfos(QueryResultsTablePane::ref(),"Query results")
             .setMenu("results", "Query").setDisposalCentral().setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(DiagramViewPane::ref(),"Diagram view")
+            .setMenu("view", "Diagram").setDisposalCentral().setDefaultOpened(true));
+    LayoutManager::ref().AddPane(  
+        LayoutPaneInfos(DiagramEditorPane::ref(),"Diagram editor")
+            .setMenu("editor", "Diagram").setDisposalSide("RIGHT", 0.4f).setDefaultOpened(true).setDefaultFocused(true));
     LayoutManager::ref().AddPane(  
         LayoutPaneInfos(MessagePane::ref(),"Console")
             .setMenu("Console").setDisposalSide("BOTTOM", 0.25f));
@@ -130,6 +140,8 @@ void Frontend::unit() {
     QueryEditorComp::unitSingleton();
     QueryResultComp::unitSingleton();
 
+    DiagramEditorPane::unitSingleton();
+    DiagramViewPane::unitSingleton();
     QueryEditorPane::unitSingleton();
     DatabaseInfosPane::unitSingleton();
     QueryHistoryPane::unitSingleton();
@@ -180,11 +192,17 @@ bool Frontend::DrawOverlays(const uint32_t& vCurrentFrame, const ImRect& vRect, 
 bool Frontend::DrawDialogsAndPopups(const uint32_t& vCurrentFrame, const ImRect& vRect, ImGuiContext* vContextPtr, void* vUserDatas) {
     m_actionsSystem.executeFirstConditionalAction();
     m_actionsSystem.runImmediateActions();
+
     LayoutManager::ref().DrawDialogsAndPopups(vCurrentFrame, vRect, vContextPtr, vUserDatas);
+
     if (m_showImGui) { ImGui::ShowDemoWindow(&m_showImGui); }
+
     if (m_showImPlot) { ImPlot::ShowDemoWindow(&m_showImPlot); }
+
     if (m_showMetric) { ImGui::ShowMetricsWindow(&m_showMetric); }
+
     if (m_showAboutDialog) { m_drawAboutDialog(); }
+
     return false;
 }
 
@@ -269,13 +287,19 @@ void Frontend::m_drawMainMenuBar() {
         float full_width = ImGui::GetContentRegionAvail().x;
         if (ImGui::BeginMenu(" Database")) {
             if (ImGui::MenuItem(" New database")) { ActionMenuNewDatabase(); }
+
             if (ImGui::MenuItem(" Open database")) { ActionMenuOpenDatabase(); }
+
             if (DatabaseManager::ref().isDatabaseLoaded()) {
                 ImGui::Separator();
+
                 if (ImGui::MenuItem(" Reopen database")) { ActionMenuReOpenDatabase(); }
+
                 ImGui::Separator();
+
                 if (ImGui::MenuItem(" Close database")) { ActionMenuCloseDatabase(); }
             }
+
             ImGui::EndMenu();
         }
 
@@ -285,6 +309,16 @@ void Frontend::m_drawMainMenuBar() {
         LayoutManager::ref().DisplayMenu(io.DisplaySize);
 
         ImGui::Spacing();
+
+        /*
+        if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::BeginMenu("Styles")) {
+                ImGuiThemeHelper::ref().DrawMenu();
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+        */
 
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem(" About")) { m_showAboutDialog = true; }

@@ -53,6 +53,7 @@
 // singletons
 #include <backend/helpers/databaseHelper.h>
 #include <backend/managers/databaseManager.h>
+#include <backend/diagram/diagramManager.h>
 
 #include <frontend/components/schema/databaseSchemaComp.h>
 
@@ -70,6 +71,7 @@
 
 #include <frontend/panes/misc/messagePane.h>
 
+
 // we include the cpp just for embedded fonts
 #include <resources/fontIcons.cpp>
 #include <resources/Roboto-Medium.h>
@@ -84,7 +86,9 @@
 
 static void glfw_error_callback(int error, const char* description) {
     const std::string desc{description};
-    if (desc.find("Failed to convert clipboard to string") != std::string::npos) { return; }
+    if (desc.find("Failed to convert clipboard to string") != std::string::npos) {
+        return;
+    }
     LogVarError("glfw error %i : %s", error, description);
 }
 
@@ -109,7 +113,7 @@ bool Backend::init(const ez::App& vApp) {
         m_InitSystems();
         m_InitPanes();
         LoadConfigFile("config.xml", "app");
-        return true;
+        return DiagramManager::ref().init();
     }
     return false;
 }
@@ -147,6 +151,11 @@ void Backend::update() {
 
 #ifndef __EMSCRIPTEN__
     auto* backup_current_context = glfwGetCurrentContext();
+
+    // Update and Render additional Platform Windows
+    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste
+    // this code elsewhere.
+    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
@@ -174,7 +183,7 @@ static void sUpdate(void* vBackend) {
 
 void Backend::run() {
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop_arg(sUpdate, this, 0, true);
+    emscripten_set_main_loop_arg(Backend::sUpdate, this, 0, true);
 #else
     while (!glfwWindowShouldClose(m_MainWindowPtr)) {
         update();
@@ -185,13 +194,16 @@ void Backend::run() {
 // todo : to refactor ! i dont like that
 void Backend::unit() {
     SaveConfigFile("config.xml", "app", "config");
+    DiagramManager::ref().unit();
     m_UnitSystems();
     m_UnitImGui();
     m_UnitWindow();
     m_UnitModels();
 }
 
-bool Backend::isThereAnError() const { return false; }
+bool Backend::isThereAnError() const {
+    return false;
+}
 
 void Backend::NeedToNewDatabase(const std::string& vFilePathName) {
     m_NeedToNewDatabase = true;
@@ -203,24 +215,34 @@ void Backend::NeedToLoadDatabase(const std::string& vFilePathName) {
     m_DatabaseFileToLoad = vFilePathName;
 }
 
-void Backend::NeedToCloseDatabase() { m_NeedToCloseDatabase = true; }
+void Backend::NeedToCloseDatabase() {
+    m_NeedToCloseDatabase = true;
+}
 
 // actions to do after rendering
 void Backend::PostRenderingActions() {
     if (m_NeedToLoadDatabase) {
         m_NeedToLoadDatabase = false;
-        if (DatabaseManager::ref().loadDatabaseFromFile(m_DatabaseFileToLoad)) { setAppTitle(m_DatabaseFileToLoad); }
+        if (DatabaseManager::ref().loadDatabaseFromFile(m_DatabaseFileToLoad)) {
+            setAppTitle(m_DatabaseFileToLoad);
+        }
     }
     if (m_NeedToNewDatabase) {
         m_NeedToNewDatabase = false;
-        if (DatabaseManager::ref().newDatabaseFromFile(m_DatabaseFileToLoad)) { setAppTitle(m_DatabaseFileToLoad); }
+        if (DatabaseManager::ref().newDatabaseFromFile(m_DatabaseFileToLoad)) {
+            setAppTitle(m_DatabaseFileToLoad);
+        }
     }
     DatabaseSchemaComp::ref().doActions();
 }
 
-bool Backend::IsNeedToCloseApp() { return m_NeedToCloseApp; }
+bool Backend::IsNeedToCloseApp() {
+    return m_NeedToCloseApp;
+}
 
-void Backend::NeedToCloseApp(const bool& vFlag) { m_NeedToCloseApp = vFlag; }
+void Backend::NeedToCloseApp(const bool& vFlag) {
+    m_NeedToCloseApp = vFlag;
+}
 
 void Backend::CloseApp() {
     // will escape the main loop
@@ -246,7 +268,9 @@ ez::dvec2 Backend::GetMousePos() {
     return mp;
 }
 
-int Backend::GetMouseButton(int vButton) { return glfwGetMouseButton(m_MainWindowPtr, vButton); }
+int Backend::GetMouseButton(int vButton) {
+    return glfwGetMouseButton(m_MainWindowPtr, vButton);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSOLE ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +296,9 @@ void Backend::SwitchConsoleVisibility() {
     SetConsoleVisibility(m_ConsoleVisiblity);
 }
 
-bool Backend::GetConsoleVisibility() { return m_ConsoleVisiblity; }
+bool Backend::GetConsoleVisibility() {
+    return m_ConsoleVisiblity;
+}
 
 ///////////////////////////////////////////////////////
 //// CONFIGURATION ////////////////////////////////////
@@ -304,7 +330,9 @@ void Backend::m_RenderOffScreen() {}
 
 void Backend::m_update() {}
 
-void Backend::m_IncFrame() { ++m_CurrentFrame; }
+void Backend::m_IncFrame() {
+    ++m_CurrentFrame;
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 //// PRIVATE /////////////////////////////////////////////////////////////////////
@@ -312,7 +340,9 @@ void Backend::m_IncFrame() { ++m_CurrentFrame; }
 
 bool Backend::m_InitWindow() {
     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit()) { return false; }
+    if (!glfwInit()) {
+        return false;
+    }
 
 #ifdef __EMSCRIPTEN__
     // GL 3.0 + GLSL 130
@@ -408,14 +438,22 @@ bool Backend::m_InitImGui() {
     if (ImGui_ImplGlfw_InitForOpenGL(m_MainWindowPtr, true) &&  //
         ImGui_ImplOpenGL3_Init(m_GlslVersion)) {
         // ui init
-        if (Frontend::ref().init()) { return true; }
+        if (Frontend::ref().init()) {
+            return true;
+        }
     }
     return false;
 }
 
-void Backend::m_InitModels() { DatabaseHelper::initSingleton(); }
+void Backend::m_InitModels() {
+    DatabaseHelper::initSingleton();
+    DiagramManager::initSingleton();
+}
 
-void Backend::m_UnitModels() { DatabaseHelper::unitSingleton(); }
+void Backend::m_UnitModels() {
+    DatabaseHelper::unitSingleton();
+    DiagramManager::unitSingleton();
+}
 
 void Backend::m_InitSystems() {}
 

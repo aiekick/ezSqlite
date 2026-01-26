@@ -14,3 +14,7 @@
 	path = 3rdparty/glfw
 	url = https://github.com/glfw/glfw.git
 	branch = master
+[submodule "3rdparty/grapher"]
+	path = 3rdparty/grapher
+	url = https://github.com/aiekick/Grapher.git
+	branch = master
