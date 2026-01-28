@@ -74,7 +74,7 @@ struct ColumnDesc {
     SqliteValueType nativeType{SqliteValueType::Null};
     uint16_t constraints{static_cast<uint8_t>(ColumnConstraint::None)};
     std::string defaultValue;
-    std::vector<size_t> fks;//foerign key index of the TableDesc.foreignKeys vector
+    std::vector<size_t> fks;  // foerign key index of the TableDesc.foreignKeys vector
     bool isConstraint(ColumnConstraint vColumnConstraint) const { return !!(constraints & static_cast<uint8_t>(vColumnConstraint)); }
     void clear() { *this = ColumnDesc(); }
     bool isValid() const { return (cid != 0) && (!name.empty()) && (!type.empty()); }
@@ -116,10 +116,10 @@ struct History {
     bool isValid() const { return !queries.empty(); }
 };
 
-// Résultat générique de requête
+// Resultat generique de requete
 struct ColumnInfo {
     std::string name;
-    std::string declType;  // Type déclaré dans la table (peut être vide)
+    std::string declType;  // Type declare dans la table (peut etre vide)
 };
 
 struct Row {

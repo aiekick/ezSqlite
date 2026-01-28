@@ -186,10 +186,11 @@ include_directories(
 )
 
 if(BUILD_WEBASSEMBLY)
-    # Emscripten traite les chaînes commençant par -s comme des options de link
+    # Emscripten traite les chaï¿½nes commenï¿½ant par -s comme des options de link
     target_link_libraries(${PROJECT}
         ${IMGUIPACK_LIBRARIES}
         ${SQLITE3_LIBRARIES}
+        grapher
         "-s USE_GLFW=3"
         "-s USE_WEBGL2=1"
         "-s FULL_ES3=1"
@@ -334,7 +335,7 @@ set(CPACK_PACKAGE_NAME "${PROJECT_PACKAGE_NAME}")
 set(CPACK_PACKAGE_FILE_NAME "${PROJECT_PACKAGE_NAME}")
 set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "${PROJECT}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_PACKAGE_NAME}")
-SET(CPACK_OUTPUT_FILE_PREFIX "${FINAL_BIN_DIR}/packages")
+set(CPACK_OUTPUT_FILE_PREFIX "${FINAL_BIN_DIR}/packages")
 set(CPACK_PACKAGE_VERSION "${MajorNumber}.${MinorNumber}.${BuildNumber}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${${PROJECT}_PACKAGE_NAME} - Offline full featured sqlite editor")
 

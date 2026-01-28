@@ -17,18 +17,18 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <App.h>
+#include <app.h>
 #include <string>
 #include <iostream>
 
 #include <ezlibs/ezLog.hpp>
 #include <ezlibs/ezTools.hpp>
 
-//#define ENABLE_MEM_CHECK
+// #define ENABLE_MEM_CHECK
 
 int main(int argc, char** argv) {
-	int res = EXIT_SUCCESS;
-	
+    int res = EXIT_SUCCESS;
+
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #ifdef ENABLE_MEM_CHECK

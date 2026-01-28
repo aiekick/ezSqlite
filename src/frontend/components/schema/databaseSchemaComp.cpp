@@ -8,9 +8,7 @@
 
 #include <frontend/panes/query/queryResultsTablePane.h>
 
-void DatabaseSchemaComp::doActions() {
-    m_actions.runImmediateActions();
-}
+void DatabaseSchemaComp::doActions() { m_actions.runImmediateActions(); }
 
 void DatabaseSchemaComp::drawSchema() {
     static auto labelYES{"Yes"};
@@ -105,7 +103,7 @@ void DatabaseSchemaComp::drawSchema() {
                                 if (!c.defaultValue.empty()) {
                                     ImGui::TextUnformatted(c.defaultValue.c_str());
                                 } else {
-                                    ImGui::TextDisabled(labelNull);
+                                    ImGui::TextDisabled("%s", labelNull);
                                 }
                             }
                             ImGui::Unindent();
@@ -122,9 +120,7 @@ void DatabaseSchemaComp::drawSchema() {
         ImGui::EndTable();
     }
     if (!query_to_execute.empty()) {
-        if (DatabaseManager::ref().executeQuery(query_to_execute, false, true)) {
-            QueryResultComp::ref().setResult(DatabaseManager::ref().getLastQueryResult());
-        }
+        if (DatabaseManager::ref().executeQuery(query_to_execute, false, true)) { QueryResultComp::ref().setResult(DatabaseManager::ref().getLastQueryResult()); }
     }
 }
 
@@ -134,19 +130,17 @@ ez::xml::Nodes DatabaseSchemaComp::getXmlNodes(const std::string& vUserDatas) {
 }
 
 bool DatabaseSchemaComp::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
-    //const auto& strName = vNode.getName();
-    //const auto& strValue = vNode.getContent();
-    //const auto& strParentName = vParent.getName();
+    // const auto& strName = vNode.getName();
+    // const auto& strValue = vNode.getContent();
+    // const auto& strParentName = vParent.getName();
     return false;  // stop here
 }
 
 void DatabaseSchemaComp::m_drawTableContextMenu(const datas::TableDesc& vTableDatas) {
-    if (ImGui::MenuItem("Show SELECT statement")) {
-        QueryEditorComp::ref().setCode("SELECT * FROM " + vTableDatas.name + ";");
-    }
+    if (ImGui::MenuItem("Show SELECT statement")) { QueryEditorComp::ref().setCode("SELECT * FROM " + vTableDatas.name + ";"); }
     if (ImGui::MenuItem("Show CREATE statement")) {
         m_actions.pushBackImmediateAction([this, &vTableDatas]() {
-            if (DatabaseManager::ref().executeQuery("SELECT sql FROM sqlite_schema WHERE name = '" + vTableDatas.name + "';", false,false)) {
+            if (DatabaseManager::ref().executeQuery("SELECT sql FROM sqlite_schema WHERE name = '" + vTableDatas.name + "';", false, false)) {
                 const auto& result = DatabaseManager::ref().getLastQueryResult();
                 if (result.isValid()) {
                     QueryEditorComp::ref().setCode(  //
@@ -157,7 +151,5 @@ void DatabaseSchemaComp::m_drawTableContextMenu(const datas::TableDesc& vTableDa
         });
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Show DROP TABLE statement")) {
-        QueryEditorComp::ref().setCode("DROP TABLE " + vTableDatas.name + ";");
-    }
+    if (ImGui::MenuItem("Show DROP TABLE statement")) { QueryEditorComp::ref().setCode("DROP TABLE " + vTableDatas.name + ";"); }
 }

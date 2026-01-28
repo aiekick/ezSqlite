@@ -49,18 +49,14 @@ void QueryResultComp::setResult(const datas::QueryResult& vResult) {
 
 bool QueryResultComp::drawTable() {
     if (m_queryResult.isValid()) {
-        if (m_drawQueryResultTable(m_queryResult, m_selRow, m_selCol, m_cellValue)) {
-            return true;
-        }
+        if (m_drawQueryResultTable(m_queryResult, m_selRow, m_selCol, m_cellValue)) { return true; }
     }
     return false;
 }
 
 void QueryResultComp::drawValue() {
     if (m_queryResult.isValid()) {
-        if (!m_cellValue.empty()) {
-            ImGui::Text(m_cellValue.c_str());
-        }
+        if (!m_cellValue.empty()) { ImGui::Text("%s", m_cellValue.c_str()); }
     }
 }
 
@@ -70,19 +66,17 @@ ez::xml::Nodes QueryResultComp::getXmlNodes(const std::string& vUserDatas) {
 }
 
 bool QueryResultComp::setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) {
-    //const auto& strName = vNode.getName();
-    //const auto& strValue = vNode.getContent();
-    //const auto& strParentName = vParent.getName();
+    // const auto& strName = vNode.getName();
+    // const auto& strValue = vNode.getContent();
+    // const auto& strParentName = vParent.getName();
     return false;  // stop here
 }
 
 bool QueryResultComp::m_drawQueryResultTable(const datas::QueryResult& vResult, int& ioSelRow, int& ioSelCol, std::string& vOutValue) {
     bool needResizeToFit{false};
     if (ImGui::BeginMenuBar()) {
-        //if (ImGui::BeginMenu("Sizing")) {
-            if (ImGui::MenuItem("Fit all columns")) {
-                needResizeToFit = true;
-            }
+        // if (ImGui::BeginMenu("Sizing")) {
+        if (ImGui::MenuItem("Fit all columns")) { needResizeToFit = true; }
         //    ImGui::EndMenu();
         //}
         ImGui::EndMenuBar();
@@ -109,9 +103,7 @@ bool QueryResultComp::m_drawQueryResultTable(const datas::QueryResult& vResult, 
         m_queryResultTableClipper.Begin(rowCount, ImGui::GetTextLineHeightWithSpacing());
         while (m_queryResultTableClipper.Step()) {
             for (int r = m_queryResultTableClipper.DisplayStart; r < m_queryResultTableClipper.DisplayEnd; ++r) {
-                if (r < 0) {
-                    continue;
-                }
+                if (r < 0) { continue; }
                 const auto& row = vResult.rows.at(r);
                 ImGui::TableNextRow();
                 for (int c = 0; c < colCount; ++c) {
@@ -136,7 +128,7 @@ bool QueryResultComp::m_drawQueryResultTable(const datas::QueryResult& vResult, 
                                     if (val.size() < sizeof(buf)) {
                                         memcpy(buf, val.c_str(), val.size() + 1);
                                     } else {
-                                        snprintf(buf, sizeof(buf), "%.*s…", (int)sizeof(buf) - 2, val.c_str());
+                                        snprintf(buf, sizeof(buf), "%.*s...", (int)sizeof(buf) - 2, val.c_str());
                                     }
                                 } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {  // type blob
                                     columnType = datas::SqliteValueType::Blob;
@@ -172,9 +164,7 @@ bool QueryResultComp::m_drawQueryResultTable(const datas::QueryResult& vResult, 
             }
         }
         // Resizing
-        if (needResizeToFit) {
-            ImGui::TableSetColumnWidthAutoAll(ImGui::GetCurrentContext()->CurrentTable);
-        }
+        if (needResizeToFit) { ImGui::TableSetColumnWidthAutoAll(ImGui::GetCurrentContext()->CurrentTable); }
         ImGui::EndTable();
     }
     return selectionChanged;

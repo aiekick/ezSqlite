@@ -17,14 +17,11 @@
  * along with ezSqlite.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "MessagePane.h"
+#include "messagePane.h"
 
-bool MessagePane::Init() {
-    return true;
-}
+bool MessagePane::Init() { return true; }
 
-void MessagePane::Unit() {
-}
+void MessagePane::Unit() {}
 
 ///////////////////////////////////////////////////////////////////////////////////
 //// IMGUI PANE ///////////////////////////////////////////////////////////////////
