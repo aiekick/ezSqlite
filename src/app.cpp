@@ -50,6 +50,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 bool App::init(int argc, char** argv) {
+    bool ret = true;
     mp_app = std::make_unique<ez::App>(argc, argv);
     printf("-----------\n");
     printf("[[ %s Beta %s ]]\n", ezSqlite_Label, ezSqlite_BuildId);
@@ -60,7 +61,6 @@ bool App::init(int argc, char** argv) {
     if (!loc) {
         printf("setlocale fail to apply with this compiler. it seems the unicode will be NOK\n");
     }
-    bool ret = true;
     ret &= (Backend::initSingleton() != nullptr);
     ret &= (LayoutManager::initSingleton() != nullptr);
     ret &= (Messaging::initSingleton() != nullptr);

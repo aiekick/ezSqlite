@@ -1,8 +1,8 @@
 #pragma once
 
 #define ezSqlite_Label "ezSqlite"
-#define ezSqlite_BuildNumber 518
+#define ezSqlite_BuildNumber 523
 #define ezSqlite_MinorNumber 0
 #define ezSqlite_MajorNumber 0
-#define ezSqlite_BuildId "0.0.518"
-#define ezSqlite_BuildIdNum 0000518
+#define ezSqlite_BuildId "0.0.523"
+#define ezSqlite_BuildIdNum 0000523

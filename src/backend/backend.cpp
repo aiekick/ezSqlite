@@ -119,8 +119,10 @@ void Backend::update() {
     DatabaseManager::ref().newFrame();
 
     // maintain active, prevent user change via imgui dialog
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;    // Enable Docking
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Disable Viewport
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
+#ifndef __EMSCRIPTEN__
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Enable Viewport
+#endif
 
     glfwGetFramebufferSize(m_MainWindowPtr, &m_display_w, &m_display_h);
 
@@ -324,6 +326,12 @@ bool Backend::m_InitWindow() {
 #ifdef __EMSCRIPTEN__
     // GL 3.0 + GLSL 130
     m_GlslVersion = "#version 300 es";
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
 #else
     // GL 3.0 + GLSL 130
     m_GlslVersion = "#version 130";

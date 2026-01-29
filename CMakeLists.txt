@@ -201,6 +201,7 @@ if(BUILD_WEBASSEMBLY)
         "-s INITIAL_MEMORY=256MB"
         "-s ASSERTIONS=1"
         "-s ERROR_ON_UNDEFINED_SYMBOLS=0"
+        "--shell-file ${CMAKE_SOURCE_DIR}/res/ezSqlite.html"
         "--bind"
     )
 else()
@@ -214,10 +215,11 @@ else()
     )
 endif()
 
-set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${FINAL_BIN_DIR}")
-set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${FINAL_BIN_DIR}")
-set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${FINAL_BIN_DIR}")
-set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${FINAL_BIN_DIR}")
+set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${FINAL_BIN_DIR})
+set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${FINAL_BIN_DIR})
+set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${FINAL_BIN_DIR})
+set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${FINAL_BIN_DIR})
+set_target_properties(${PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${FINAL_BIN_DIR})
 
 ########################################################
 ################# BUILD INCREMENT TOOL #################
@@ -230,7 +232,9 @@ if(NOT BUILD_WEBASSEMBLY)
 
     add_custom_command(
         TARGET ${PROJECT} PRE_BUILD
-        COMMAND ezBuildInc ${PROJECT} ${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h
+        COMMAND ezBuildInc ${PROJECT}
+        ${CMAKE_SOURCE_DIR}/src/headers/${PROJECT}Build.h
+        --jsfile ${FINAL_BIN_DIR}/${PROJECT}Build.js
     )
 endif()
 
