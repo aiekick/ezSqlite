@@ -12,6 +12,7 @@ bool DiagramManager::init() {
     m_graphStyle.style.NodeBorderWidth = 0.5f;
     m_graphStyle.style.altDragSnapping = 5.0f;
     m_graphStyle.style.PinRounding = 1.0f;
+    m_graphStyle.style.LinkStrength = 0.0f;  // Straight links instead of splines
     m_graphConfig.showFlow = true;
     m_graphConfig.flowType = "FLOW";
     m_graphConfig.showFlowKey = ImGuiKey_Backspace;
@@ -91,6 +92,8 @@ bool DiagramManager::loadDatabase(const datas::DatabaseDesc& vDatabaseDesc) {
                 }
             }
         }
+        // Apply automatic layout after loading all nodes and connections
+        m_baseLayout.applyLayout(m_graphPtr);
     }
     LayoutManager::ref().FocusSpecificPane(DiagramViewPane::ref()->GetFlag());
     return ret;
