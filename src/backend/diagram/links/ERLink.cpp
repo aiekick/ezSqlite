@@ -80,31 +80,6 @@ void ERLink::m_drawOrthogonalLink(const BaseSlotWeak& vIn, const BaseSlotWeak& v
     auto startPinId = inPtr->getPinID();
     auto endPinId = outPtr->getPinID();
 
-    // In imgui-node-editor, we need to get the pin positions
-    // The node editor tracks pin positions internally during BeginPin/EndPin
-    // We'll calculate positions based on the pins after they're drawn
-
-    // For now, use a simpler approach: let imgui-node-editor position the pins
-    // and we'll draw on top using ImDrawList
-
-    // First, we still need to tell the node editor about the link so it tracks it
-    // But we won't use its rendering
-    nd::Link(getUuid(), startPinId, endPinId, IM_COL32(0, 0, 0, 0), 0.0f);  // Invisible link
-
-    // Now get actual pin positions using node editor functions
-    // Note: Pins must be drawn in the current frame for this to work
-    // We'll get positions from the canvas
-
-    // Get draw list for custom rendering
-    ImDrawList* drawList = nd::GetHintBackgroundDrawList();
-    if (drawList == nullptr) {
-        drawList = ImGui::GetWindowDrawList();
-    }
-
-    if (drawList == nullptr) {
-        return;
-    }
-
     // Get pin screen positions
     // The slots store their positions which we can use
     ImVec2 startPos = nd::CanvasToScreen(inPtr->getPos());
@@ -127,6 +102,20 @@ void ERLink::m_drawOrthogonalLink(const BaseSlotWeak& vIn, const BaseSlotWeak& v
     } else if (m_isHovered) {
         linkColor = IM_COL32(50, 176, 255, 255);  // Blue for hover
         thickness = vThick + 0.5f;
+    }
+
+    // First, call nd::Link to register the link with the node editor
+    // This allows node editor to track it for selection, etc.
+    // We use invisible color since we'll draw it ourselves
+    nd::Link(getUuid(), startPinId, endPinId, IM_COL32(0, 0, 0, 0), 0.0f);
+
+    // Get the draw list - must be done within nd::Begin/End context
+    // ImGui::GetWindowDrawList() is safe here as we're called from m_drawLinks
+    // which is inside the nd::Begin/nd::End block
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+    if (drawList == nullptr) {
+        return;
     }
 
     // Draw the polyline segments
