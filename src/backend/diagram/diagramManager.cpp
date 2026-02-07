@@ -62,10 +62,34 @@ bool DiagramManager::loadDatabase(const datas::DatabaseDesc& vDatabaseDesc) {
     if (!m_databaseDesc.isValid()) {
         m_databaseDesc = vDatabaseDesc;
         ret = true;
+        // Create all table nodes first
+        std::map<std::string, TableNodeWeak> tableNodes;
         for (const auto& tbl : m_databaseDesc.tables) {
             auto pTblNode = m_graphPtr->createChildNode<TableNode>().lock();
             if (pTblNode != nullptr) {
                 ret &= pTblNode->loadShema(tbl);
+                tableNodes[tbl.name] = pTblNode;
+            }
+        }
+        // Create FK connections
+        for (const auto& tbl : m_databaseDesc.tables) {
+            if (tableNodes.find(tbl.name) != tableNodes.end()) {
+                auto srcTableNode = tableNodes[tbl.name].lock();
+                if (srcTableNode != nullptr) {
+                    for (const auto& fk : tbl.foreignKeys) {
+                        if (tableNodes.find(fk.refTable) != tableNodes.end()) {
+                            auto dstTableNode = tableNodes[fk.refTable].lock();
+                            if (dstTableNode != nullptr) {
+                                // Find source column output slot and target column input slot
+                                auto srcSlot = srcTableNode->findOutputSlotByColumnName(fk.columnName);
+                                auto dstSlot = dstTableNode->findInputSlotByColumnName(fk.refColumn);
+                                if (!srcSlot.expired() && !dstSlot.expired()) {
+                                    m_graphPtr->connectSlots(srcSlot, dstSlot);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -117,6 +141,8 @@ bool DiagramManager::drawDiagram() {
 
         ImGui::EndMenuBar();
     }
+
+    m_showCreateTableDialog();
 
     if (m_graphPtr->isGraphChanged()) {
         // ProjectFile::Instance()->SetProjectChange();
@@ -220,6 +246,16 @@ bool DiagramManager::m_filterLibraryForInputSlotType(const BaseLibrary::SlotType
 }
 
 void DiagramManager::m_showLibrary() {
+    // First show our custom "Create Table" menu item
+    if (ImGui::BeginPopup("##DiagramLibraryMenu")) {
+        if (ImGui::MenuItem("Create Table...")) {
+            m_showCreateTableDialog = true;
+        }
+        ImGui::Separator();
+        ImGui::EndPopup();
+    }
+
+    // Then show the regular library menu
     BaseLibrary::LibraryEntry entryToCreate;
     if (m_libraryToShow.showMenu(entryToCreate)) {
         BaseNodeWeak new_node = m_libraryToShow.createChildNodeInGraph(entryToCreate, m_graphPtr);
@@ -244,8 +280,51 @@ void DiagramManager::m_showLibrary() {
                     // and we must check what happen
                     LogVarDebugError("Fail to found a slot of type [%s] for node of type [%s]", wanted_slot_type.c_str(), entryToCreate.nodeType.c_str());
                 }
-                // ProjectFile::Instance()->SetProjectChange();
             }
         }
     }
+}
+
+void DiagramManager::m_showCreateTableDialog() {
+    if (m_showCreateTableDialog) {
+        ImGui::OpenPopup("Create Table");
+        m_showCreateTableDialog = false;
+    }
+
+    if (ImGui::BeginPopupModal("Create Table", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Enter table name:");
+        ImGui::SetNextItemWidth(300.0f);
+        if (ImGui::InputText("##TableName", m_newTableNameBuffer, sizeof(m_newTableNameBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if (m_newTableNameBuffer[0] != '\0') {
+                m_createEmptyTable(m_newTableNameBuffer);
+                m_newTableNameBuffer[0] = '\0';
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::Separator();
+        if (ImGui::Button("Create", ImVec2(120, 0))) {
+            if (m_newTableNameBuffer[0] != '\0') {
+                m_createEmptyTable(m_newTableNameBuffer);
+                m_newTableNameBuffer[0] = '\0';
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            m_newTableNameBuffer[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::EndPopup();
+    }
+}
+
+TableNodeWeak DiagramManager::m_createEmptyTable(const std::string& vTableName) {
+    datas::TableDesc tableDesc;
+    tableDesc.name = vTableName;
+    auto pTblNode = m_graphPtr->createChildNode<TableNode>().lock();
+    if (pTblNode != nullptr) {
+        pTblNode->loadShema(tableDesc);
+    }
+    return pTblNode;
 }
