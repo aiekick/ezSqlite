@@ -3,6 +3,7 @@
 #include <grapher/baseNode.h>
 #include <grapher/baseSlot.h>
 #include <backend/diagram/diagramLibrary.h>
+#include <backend/diagram/links/ERLink.h>
 #include <LayoutManager.h>
 #include <frontend/panes/diagram/diagramViewPane.h>
 
@@ -37,6 +38,10 @@ bool DiagramManager::init() {
     m_graphPtr->setSelectNodeActionFunctor(                                                                    //
         [this](const BaseGraphWeak& vGraph, const BaseNodeWeak& vNode, BaseGraph::UserDatas /*vUserDatas*/) {  //
             m_selectNode(vGraph, vNode);
+        });
+    m_graphPtr->setCreateLinkFunctor(                                                                 //
+        [](const BaseStyle& vParentStyle, const BaseSlotWeak& vStart, const BaseSlotWeak& vEnd) {  //
+            return ERLink::create(vParentStyle, vStart, vEnd);
         });
     addSlotColor("NONE", ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
     addSlotColor("FLOW", ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
