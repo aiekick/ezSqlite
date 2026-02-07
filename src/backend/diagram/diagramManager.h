@@ -36,8 +36,12 @@ private:
     BaseSlotWeak m_createNodeFromSlot;
 
     BaseNodeWeak m_selectedNode;
-    
+
     datas::DatabaseDesc m_databaseDesc;
+
+    // For creating new table
+    bool m_showCreateTableDialog = false;
+    char m_newTableNameBuffer[256] = {0};
 
 public:
     bool init();
@@ -64,4 +68,6 @@ private:
     bool m_loadNodeFromXml(const BaseGraphWeak& vGraph, const ez::xml::Node& vNode, const ez::xml::Node& vParent);
     bool m_filterLibraryForInputSlotType(const BaseLibrary::SlotType& vSlotType);
     void m_showLibrary();
+    void m_showCreateTableDialog();
+    TableNodeWeak m_createEmptyTable(const std::string& vTableName);
 };

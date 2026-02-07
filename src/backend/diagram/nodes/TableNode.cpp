@@ -46,7 +46,81 @@ bool TableNode::loadShema(const datas::TableDesc& vSchema) {
 }
 
 bool TableNode::drawWidgets() {
-    return false;
+    bool changed = false;
+    const auto& nodeDatas = getDatas<BaseNodeDatas>();
+    ImGui::Text("Table: %s", nodeDatas.name.c_str());
+    ImGui::Separator();
+
+    if (ImGui::BeginTable("##TableEditor", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Constraints", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+        ImGui::TableHeadersRow();
+
+        for (size_t i = 0; i < m_schema.columns.size(); ++i) {
+            auto& col = m_schema.columns.at(i);
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", col.name.c_str());
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", col.type.c_str());
+
+            ImGui::TableSetColumnIndex(2);
+            std::string constraints;
+            if (col.isConstraint(datas::ColumnConstraint::PrimaryKey)) constraints += "PK ";
+            if (col.isConstraint(datas::ColumnConstraint::ForeignKey)) constraints += "FK ";
+            if (col.isConstraint(datas::ColumnConstraint::NotNull)) constraints += "NN ";
+            if (col.isConstraint(datas::ColumnConstraint::Unique)) constraints += "UN ";
+            if (col.isConstraint(datas::ColumnConstraint::AutoIncrement)) constraints += "AI ";
+            ImGui::Text("%s", constraints.c_str());
+
+            ImGui::TableSetColumnIndex(3);
+            ImGui::Text("-");
+        }
+
+        ImGui::EndTable();
+    }
+
+    if (ImGui::Button("Add Column")) {
+        // Future: Add functionality to add columns
+    }
+
+    return changed;
+}
+
+BaseSlotWeak TableNode::findInputSlotByColumnName(const std::string& vColumnName) {
+    for (auto& slot : m_getInputSlotsRef()) {
+        auto slot_ptr = slot.lock();
+        if (slot_ptr != nullptr) {
+            auto field_slot_ptr = std::dynamic_pointer_cast<FieldSlot>(slot_ptr);
+            if (field_slot_ptr != nullptr) {
+                const auto& datas = field_slot_ptr->getDatas<FieldSlot::FieldSlotDatas>();
+                if (datas.column.name == vColumnName) {
+                    return slot;
+                }
+            }
+        }
+    }
+    return BaseSlotWeak();
+}
+
+BaseSlotWeak TableNode::findOutputSlotByColumnName(const std::string& vColumnName) {
+    for (auto& slot : m_getOutputSlotsRef()) {
+        auto slot_ptr = slot.lock();
+        if (slot_ptr != nullptr) {
+            auto field_slot_ptr = std::dynamic_pointer_cast<FieldSlot>(slot_ptr);
+            if (field_slot_ptr != nullptr) {
+                const auto& datas = field_slot_ptr->getDatas<FieldSlot::FieldSlotDatas>();
+                if (datas.column.name == vColumnName) {
+                    return slot;
+                }
+            }
+        }
+    }
+    return BaseSlotWeak();
 }
 
 void TableNode::drawDebugInfos() {

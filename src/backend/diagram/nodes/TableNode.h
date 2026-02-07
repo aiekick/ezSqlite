@@ -23,6 +23,11 @@ public:
     ez::xml::Nodes getXmlNodes(const std::string& vUserDatas) override;
     bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
+    BaseSlotWeak findInputSlotByColumnName(const std::string& vColumnName);
+    BaseSlotWeak findOutputSlotByColumnName(const std::string& vColumnName);
+    datas::TableDesc& getSchema() { return m_schema; }
+    const datas::TableDesc& getSchema() const { return m_schema; }
+
 protected:
     bool m_drawHeader() override;
     bool m_drawHints() override;
