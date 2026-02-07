@@ -1,6 +1,7 @@
 #pragma once
 
 #include <grapher/grapher.h>
+#include <backend/diagram/slots/FieldSlot.h>
 #include <headers/defs.h>
 
 class TableNode;
@@ -23,8 +24,8 @@ public:
     ez::xml::Nodes getXmlNodes(const std::string& vUserDatas) override;
     bool setFromXmlNodes(const ez::xml::Node& vNode, const ez::xml::Node& vParent, const std::string& vUserDatas) override;
 
-    BaseSlotWeak findInputSlotByColumnName(const std::string& vColumnName);
-    BaseSlotWeak findOutputSlotByColumnName(const std::string& vColumnName);
+    FieldSlotWeak findInputSlotByColumnName(const std::string& vColumnName);
+    FieldSlotWeak findOutputSlotByColumnName(const std::string& vColumnName);
     datas::TableDesc& getSchema() { return m_schema; }
     const datas::TableDesc& getSchema() const { return m_schema; }
 

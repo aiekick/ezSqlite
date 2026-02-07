@@ -5,6 +5,8 @@
 #include <grapher/grapher.h>
 #include <grapher/interfaces/SlotColorBankInterface.h>
 
+#include <backend/diagram/nodes/TableNode.h>
+
 #include <ezlibs/ezClass.hpp>
 #include <ezlibs/ezSingleton.hpp>
 #include <ezlibs/ezXmlConfig.hpp>
@@ -40,7 +42,7 @@ private:
     datas::DatabaseDesc m_databaseDesc;
 
     // For creating new table
-    bool m_showCreateTableDialog = false;
+    bool m_showCreateTableDialogPopup = false;
     char m_newTableNameBuffer[256] = {0};
 
 public:

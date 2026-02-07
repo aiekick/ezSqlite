@@ -121,7 +121,7 @@ void Backend::update() {
     // maintain active, prevent user change via imgui dialog
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
 #ifndef __EMSCRIPTEN__
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Enable Viewport
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  // Enable Viewport
 #endif
 
     glfwGetFramebufferSize(m_MainWindowPtr, &m_display_w, &m_display_h);

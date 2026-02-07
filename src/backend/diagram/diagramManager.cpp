@@ -5,7 +5,6 @@
 #include <backend/diagram/diagramLibrary.h>
 #include <LayoutManager.h>
 #include <frontend/panes/diagram/diagramViewPane.h>
-#include <backend/diagram/nodes/TableNode.h>
 
 
 bool DiagramManager::init() {
@@ -249,7 +248,7 @@ void DiagramManager::m_showLibrary() {
     // First show our custom "Create Table" menu item
     if (ImGui::BeginPopup("##DiagramLibraryMenu")) {
         if (ImGui::MenuItem("Create Table...")) {
-            m_showCreateTableDialog = true;
+            m_showCreateTableDialogPopup = true;
         }
         ImGui::Separator();
         ImGui::EndPopup();
@@ -286,9 +285,9 @@ void DiagramManager::m_showLibrary() {
 }
 
 void DiagramManager::m_showCreateTableDialog() {
-    if (m_showCreateTableDialog) {
+    if (m_showCreateTableDialogPopup) {
         ImGui::OpenPopup("Create Table");
-        m_showCreateTableDialog = false;
+        m_showCreateTableDialogPopup = false;
     }
 
     if (ImGui::BeginPopupModal("Create Table", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {

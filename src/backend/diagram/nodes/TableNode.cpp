@@ -91,7 +91,7 @@ bool TableNode::drawWidgets() {
     return changed;
 }
 
-BaseSlotWeak TableNode::findInputSlotByColumnName(const std::string& vColumnName) {
+FieldSlotWeak TableNode::findInputSlotByColumnName(const std::string& vColumnName) {
     for (auto& slot : m_getInputSlotsRef()) {
         auto slot_ptr = slot.lock();
         if (slot_ptr != nullptr) {
@@ -99,15 +99,15 @@ BaseSlotWeak TableNode::findInputSlotByColumnName(const std::string& vColumnName
             if (field_slot_ptr != nullptr) {
                 const auto& datas = field_slot_ptr->getDatas<FieldSlot::FieldSlotDatas>();
                 if (datas.column.name == vColumnName) {
-                    return slot;
+                    return field_slot_ptr;
                 }
             }
         }
     }
-    return BaseSlotWeak();
+    return FieldSlotWeak();
 }
 
-BaseSlotWeak TableNode::findOutputSlotByColumnName(const std::string& vColumnName) {
+FieldSlotWeak TableNode::findOutputSlotByColumnName(const std::string& vColumnName) {
     for (auto& slot : m_getOutputSlotsRef()) {
         auto slot_ptr = slot.lock();
         if (slot_ptr != nullptr) {
@@ -115,12 +115,12 @@ BaseSlotWeak TableNode::findOutputSlotByColumnName(const std::string& vColumnNam
             if (field_slot_ptr != nullptr) {
                 const auto& datas = field_slot_ptr->getDatas<FieldSlot::FieldSlotDatas>();
                 if (datas.column.name == vColumnName) {
-                    return slot;
+                    return field_slot_ptr;
                 }
             }
         }
     }
-    return BaseSlotWeak();
+    return FieldSlotWeak();
 }
 
 void TableNode::drawDebugInfos() {
