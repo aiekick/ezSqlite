@@ -107,8 +107,8 @@ void ERLink::m_drawOrthogonalLink(const BaseSlotWeak& vIn, const BaseSlotWeak& v
 
     // Get pin screen positions
     // The slots store their positions which we can use
-    ImVec2 startPos = nd::CanvasToScreen(inPtr->m_getPos());
-    ImVec2 endPos = nd::CanvasToScreen(outPtr->m_getPos());
+    ImVec2 startPos = nd::CanvasToScreen(inPtr->getPos());
+    ImVec2 endPos = nd::CanvasToScreen(outPtr->getPos());
 
     // Calculate orthogonal path
     calculateOrthogonalPath(startPos, endPos);

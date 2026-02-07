@@ -21,7 +21,7 @@ public:
     static ERLinkPtr create(const BaseStyle& vParentStyle, const BaseSlotWeak& vStart, const BaseSlotWeak& vEnd);
 
     explicit ERLink(const BaseStyle& vParentStyle);
-    bool draw();
+    bool draw() override;
 
     // Calculate orthogonal path between two points
     void calculateOrthogonalPath(const ImVec2& vStart, const ImVec2& vEnd);
